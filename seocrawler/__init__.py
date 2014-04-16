@@ -5,8 +5,12 @@ import re
 import hashlib
 from urlparse import urlparse, urljoin
 
+from bs4 import BeautifulSoup
+
 import seolinter
 
+html_parser = "lxml"
+# html_parser = "html.parser"
 
 def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
@@ -24,7 +28,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
             raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
 
         processed_urls[url] = None
-        
+
         results = retrieve_url(url, user_agent)
 
         for res in results:
@@ -44,7 +48,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
                     for link in links:
                         link_url = link['url']
 
-                        # Process all external links and create the 
+                        # Process all external links and create the
                         if not is_internal_url(link_url, url):
                             if link_url not in processed_urls:
                                 link_results = retrieve_url(link_url, user_agent, False)
@@ -150,7 +154,30 @@ def extract_sources(html):
 
 
 def extract_page_details(html, url):
-    return {}
+    soup = BeautifulSoup(html, html_parser)
+
+    if not soup.find('head'):
+        return {}
+
+    robots = soup.find('head').find('meta', attrs={"name":"robots"})
+    title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
+
+    return {
+        'size': len(html),
+        'canonical': soup.find('head').find('link', attrs={"rel":"canonical"}).get("href"),
+        'title_1': title,
+        'title_length_1': len(title),
+        'meta_description_1': soup.find('head').find('meta', attrs={"name":"description"}).get("content"),
+        'meta_description_length_1': len(soup.find('head').find('meta', attrs={"name":"description"})),
+        'h1_1': soup.find('h1').get_text(),
+        'h1_length_1': len(soup.find('h1').get_text()),
+        'h1_2': soup.find_all('h1')[1].get_text(),
+        'h1_length_2': len(soup.find_all('h1')[1].get_text()),
+        'h1_count': len(soup.find_all('h1')),
+        'meta_robots': robots.get("content") if robots else None,
+        'rel_next': soup.find('head').find('link', attrs={"rel":"next"}).get("href"),
+        'rel_prev': soup.find('head').find('link', attrs={"rel":"prev"}).get("href"),
+    }
 
 
 def store_results(db, run_id, stats, lint_errors, page_details):
@@ -167,7 +194,7 @@ INSERT INTO crawl_urls VALUES (0,
     try:
         cur.execute(insert, (
             run_id,
-            
+
             ))
         db.commit()
     except:
