@@ -1,0 +1,2 @@
+MySQL-python==1.2.5
+PyYAML==3.10

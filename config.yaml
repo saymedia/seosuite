@@ -1,0 +1,5 @@
+db:
+  host: localhost
+  user: seo
+  pass: oes
+  name: seocrawler
