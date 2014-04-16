@@ -20,7 +20,7 @@ CREATE TABLE `crawl_urls` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `run_id` varchar(36) NOT NULL DEFAULT '',
   `level` tinyint(4) unsigned NOT NULL DEFAULT '0',
-  `request_hash` varchar(32) DEFAULT NULL,
+  #`request_hash` varchar(32) DEFAULT NULL,
   `content_hash` varchar(32) DEFAULT NULL,
 
   # request data
@@ -37,9 +37,9 @@ CREATE TABLE `crawl_urls` (
   `content_type` varchar(64) DEFAULT NULL,
   `response_time` float unsigned DEFAULT NULL,
   `redirect_uri` varchar(2048) DEFAULT NULL,
-  `canonical` varchar(2048) DEFAULT NULL,
 
   # parse data
+  `canonical` varchar(2048) DEFAULT NULL,
   `title_1` varchar(1024) DEFAULT NULL,
   `title_length_1` int(10) unsigned DEFAULT NULL,
   `title_occurences_1` int(10) unsigned DEFAULT NULL,
@@ -56,9 +56,9 @@ CREATE TABLE `crawl_urls` (
   `rel_prev` varchar(2048) DEFAULT NULL,
 
   # link data
-  # `inlinks` int(10) unsigned DEFAULT NULL,
-  # `outlinks` int(10) unsigned DEFAULT NULL,
-  # `external_outlinks` int(10) unsigned DEFAULT NULL,
+  #`inlinks` int(10) unsigned DEFAULT NULL,
+  #`outlinks` int(10) unsigned DEFAULT NULL,
+  #`external_outlinks` int(10) unsigned DEFAULT NULL,
 
   # lint data
   `lint_critical` int(10) unsigned DEFAULT NULL,
