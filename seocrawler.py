@@ -15,16 +15,13 @@ def run(options):
     db = MySQLdb.connect(host=db_conf.get('host'), user=db_conf.get('user'),
         passwd=db_conf.get('pass'), db=db_conf.get('name'))
 
-
     urls = []
     if options.file:
         urls = [url.strip() for url in options.file.readlines()]
     elif options.base_url:
-        raise NotImplementedError('Starting from a base_url is not yet supported.')
-    elif options.run_id:
-        raise NotImplementedError('Restarting an existing run_id is not yet supported.')
+        urls = [options.base_url,]
 
-    crawl(urls, options.internal)
+    crawl(urls, db, options.internal)
 
 
 if __name__ == "__main__":
@@ -36,12 +33,14 @@ if __name__ == "__main__":
         help='A file containing a list of urls (one url per line) to process.')
     inputs.add_argument('-u', '--base_url', type=str,
         help='A single url to use as a starting point for crawling.')
-    inputs.add_argument('-r', '--run_id', type=str,
-        help='The id of a previous crawler execution.')
 
     # Processing options
     parser.add_argument('-i', '--internal', type=bool, default=False,
         help='Crawl any internal link urls that are found in the content of the page.')
+    parser.add_argument('--user-agent', type=str, default='Twitterbot/1.0',
+        help='The user-agent string to request pages with.')
+    parser.add_argument('--delay', type=int, default=0,
+        help='The number of milliseconds to delay between each request.')
 
     
     args = parser.parse_args()

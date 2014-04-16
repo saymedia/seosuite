@@ -1,6 +1,6 @@
 
 
-def crawl(urls, internal=False):
+def crawl(urls, db, internal=False):
 
     for url in urls:
         html, stats = retrieve_url(url)
