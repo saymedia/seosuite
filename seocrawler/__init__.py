@@ -2,83 +2,11 @@ import time
 import uuid
 import requests
 import re
+import hashlib
 from urlparse import urlparse, urljoin
 
 import seolinter
 
-sql_schema = """
-CREATE TABLE `crawl_links` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `run_id` varchar(36) NOT NULL DEFAULT '',
-  `request_hash` varchar(32) DEFAULT NULL,
-
-  # request data
-  `from_id` int(10) unsigned NOT NULL,
-  `to_id` int(10) unsigned NOT NULL,
-  `link_text` varchar(1024) DEFAULT NULL,
-  `alt_text` varchar(1024) DEFAULT NULL,
-  `rel` varchar(1024) DEFAULT NULL,
-
-  PRIMARY KEY (`id`),
-  KEY `run_id` (`run_id`),
-  KEY `from_id` (`from_id`),
-  KEY `to_id` (`to_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `crawl_urls` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `run_id` varchar(36) NOT NULL DEFAULT '',
-  `level` tinyint(4) unsigned NOT NULL DEFAULT '0',
-  `request_hash` varchar(32) DEFAULT NULL,
-  `content_hash` varchar(32) DEFAULT NULL,
-
-  # request data
-  `address` varchar(2048) NOT NULL DEFAULT '',
-  `domain` varchar(128) DEFAULT NULL,
-  `path` varchar(2048) NOT NULL DEFAULT '',
-  `external` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `status_code` tinyint(4) unsigned DEFAULT NULL,
-  `status` varchar(32) DEFAULT NULL,
-  `body` blob,
-  `size` int(10) unsigned DEFAULT NULL,
-  `address_length` int(10) unsigned NOT NULL,
-  `encoding` varchar(16) NOT NULL DEFAULT '',
-  `content_type` varchar(64) DEFAULT NULL,
-  `response_time` float unsigned DEFAULT NULL,
-  `redirect_uri` varchar(2048) DEFAULT NULL,
-  `canonical` varchar(2048) DEFAULT NULL,
-
-  # parse data
-  `title_1` varchar(1024) DEFAULT NULL,
-  `title_length_1` int(10) unsigned DEFAULT NULL,
-  `title_occurences_1` int(10) unsigned DEFAULT NULL,
-  `meta_description_1` varchar(2048) DEFAULT NULL,
-  `meta_description_length_1` int(10) unsigned DEFAULT NULL,
-  `meta_description_occurrences_1` int(10) unsigned DEFAULT NULL,
-  `h1_1` varchar(2048) DEFAULT NULL,
-  `h1_length_1` int(10) unsigned DEFAULT NULL,
-  `h1_2` varchar(2048) DEFAULT NULL,
-  `h1_length_2` int(10) unsigned DEFAULT NULL,
-  `h1_count` int(10) unsigned DEFAULT NULL,
-  `meta_robots` varchar(16) DEFAULT NULL,
-  `rel_next` varchar(2048) DEFAULT NULL,
-  `rel_prev` varchar(2048) DEFAULT NULL,
-
-  # link data
-  # `inlinks` int(10) unsigned DEFAULT NULL,
-  # `outlinks` int(10) unsigned DEFAULT NULL,
-  # `external_outlinks` int(10) unsigned DEFAULT NULL,
-
-  # lint data
-  `lint_critical` int(10) unsigned DEFAULT NULL,
-  `lint_error` int(10) unsigned DEFAULT NULL,
-  `lint_warn` int(10) unsigned DEFAULT NULL,
-  `lint_info` int(10) unsigned DEFAULT NULL,
-  `lint_results` text,
-  PRIMARY KEY (`id`),
-  KEY `run_id` (`run_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-"""
 
 def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
@@ -95,13 +23,8 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
         if not is_full_url(url):
             raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
 
-<<<<<<< Updated upstream
-        processed_urls.append(url)
-
-=======
         processed_urls[url] = None
         
->>>>>>> Stashed changes
         results = retrieve_url(url, user_agent)
 
         for res in results:
@@ -185,17 +108,8 @@ def retrieve_url(url, user_agent=None, full=True):
         print e
         raise
         # TODO: Properly handle the failure. reraise?
-<<<<<<< Updated upstream
-    finally:
-        request_time = time.time() - start
 
-
-
-    return [_build_payload(res),]
-=======
-    
     return [_build_payload(res),] + redirects
->>>>>>> Stashed changes
 
 
 def process_html(html, url):
@@ -240,8 +154,24 @@ def extract_page_details(html, url):
 
 
 def store_results(db, run_id, stats, lint_errors, page_details):
-    # cur = db.cursor()
-    pass
+    cur = db.cursor()
+
+    insert = '''
+INSERT INTO crawl_urls VALUES (0,
+    %s, 0, %s, %s,
+    %s, %s, %s, %s, %s, %s, COMPRESS(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s,
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+    %s, %s, %s, %s, %s)
+    '''
+
+    try:
+        cur.execute(insert, (
+            run_id,
+            
+            ))
+        db.commit()
+    except:
+        db.rollback()
 
 
 def is_internal_url(url):
