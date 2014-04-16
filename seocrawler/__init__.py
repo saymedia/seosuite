@@ -1,7 +1,10 @@
 import time
 import uuid
+import requests
 
-def crawl(urls, db, internal=False, delay=0):
+import seolinter
+
+def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
     processed_urls = []
     run_id = uuid.uuid4()
@@ -10,7 +13,7 @@ def crawl(urls, db, internal=False, delay=0):
         url = urls.pop(0)
         processed_urls.append(url)
         
-        status_code, html, stats = retrieve_url(url)
+        status_code, html, stats = retrieve_url(url, user_agent)
         
         if status_code == 200:
 
@@ -33,23 +36,41 @@ def crawl(urls, db, internal=False, delay=0):
         time.sleep( delay / 1000.0 )
 
 
-def retrieve_url(url):
-    html = None
+def retrieve_url(url, user_agent=None):
+
+    headers = {}
+    if user_agent:
+        headers['User-Agent'] = user_agent
+        if 'Googlebot' in user_agent:
+            # TODO: append ?__escaped_fragment__= to the url
+            pass
+
+    try:
+        start = time.time()
+        res = requests.get(url, headers=headers, timeout=15)
+    except Exception, e:
+        print e
+        # TODO: Properly handle the failure. reraise?
+    finally:
+        request_time = time.time() - start
+
+    print res.request.headers
+
+    html = res.text
     stats = {
-        'result_code': 200,
-        'result_message': None,
-        'page_size': 1000,
-        'duration': 200,
+        'result_code': res.status_code,
+        'result_message': res.reason,
+        'page_size': len(res.text),
+        'duration': request_time,
+        'encoding': res.encoding,
     }
-    status_code = 200
     
-    return status_code, html, stats
+    return res.status_code, html, stats
 
 
 def process_html(html, url):
-    lint_errors = []
 
-    # Call seolint.lint(html)
+    lint_errors = seolinter.lint(html)
 
     page_details = extract_page_details(html, url)
 
