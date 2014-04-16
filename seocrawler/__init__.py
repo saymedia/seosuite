@@ -1,6 +1,8 @@
 import time
 import uuid
 import requests
+import re
+from urlparse import urlparse
 
 import seolinter
 
@@ -11,34 +13,51 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
     while len(urls) > 0:
         url = urls.pop(0)
+
+        if is_relative_url(url):
+            raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
+
         processed_urls.append(url)
         
-        status_code, html, stats = retrieve_url(url, user_agent)
-        
-        if status_code == 200:
+        results = retrieve_url(url, user_agent)
 
-            lint_errors, page_details, additional_urls = process_html(html, url)
+        for res in results:
 
-            if internal and len(additional_urls) > 0:
-                for url in additional_urls:
-                    if url not in processed_urls and url not in urls:
-                        urls.append(url)
-
-        else:
-            # Process the error
             lint_errors = []
             page_details = []
             additional_urls = []
 
-        store_results(db, run_id, stats, lint_errors, page_details,
-            additional_urls)
+            if res['code'] == 200 and is_internal_url(res['url']):
+
+                lint_errors, page_details, links, sources = process_html(res['content'], res['url'])
+
+                if links and len(links) > 0:
+                    for url in links:
+                        if is_relative_url(url):
+                            url = make_url_absolute(url, res['url'])
+                        if url not in processed_urls and url not in urls:
+                            urls.append(url)
+
+            res = store_results(db, run_id, res, lint_errors, page_details)
 
         time.sleep( delay / 1000.0 )
 
 
 def retrieve_url(url, user_agent=None):
 
+    def _build_payload(response):
+        return {
+            'url': response.url,
+            'content': response.text,
+            'code': response.status_code,
+            'reason': response.reason,
+            'size': len(response.text),
+            'encoding': response.encoding,
+        }
+        return response.url
+
     headers = {}
+    redirects = None
     if user_agent:
         headers['User-Agent'] = user_agent
         if 'Googlebot' in user_agent:
@@ -47,21 +66,22 @@ def retrieve_url(url, user_agent=None):
 
     try:
         start = time.time()
-        res = requests.get(url, headers=headers, timeout=15)
+        if is_internal_url(url):
+            res = requests.get(url, headers=headers, timeout=15)
+        else:
+            res = requests.head(url, headers=headers, timeout=15)
+
+        if len(res.history) > 0:
+
+
     except Exception, e:
         print e
+        raise
         # TODO: Properly handle the failure. reraise?
     finally:
         request_time = time.time() - start
 
-    html = res.text
-    stats = {
-        'result_code': res.status_code,
-        'result_message': res.reason,
-        'page_size': len(res.text),
-        'duration': request_time,
-        'encoding': res.encoding,
-    }
+
     
     return res.status_code, html, stats
 
@@ -72,13 +92,33 @@ def process_html(html, url):
 
     page_details = extract_page_details(html, url)
 
-    additional_urls = extract_internal_urls(html, url)
+    internal_urls, external_urls = extract_links(html, url)
 
-    return lint_errors, page_details, additional_urls
+    sources = extract_sources(html)
+
+    return lint_errors, page_details, internal_urls + external_urls, sources
 
 
-def extract_internal_urls(html, url):
-    return []
+def extract_links(html, url):
+    internal = []
+    external = []
+    href_re = re.compile(r'<a.*?href=[\'"](?P<link>.*?)[\'"].*?>(?P<text>.*?)</a>')
+    res = href_re.findall(html)
+    if not res:
+        return internal, external
+
+    for r in res:
+        link_data = {'url': r[0], 'text': r[1]}
+        if is_internal_url(r[0]):
+            internal.append(link_data)
+        else:
+            external.append(link_data)
+
+    return internal, external
+
+
+def extract_sources(html):
+    pass
 
 
 def extract_page_details(html, url):
@@ -89,3 +129,20 @@ def store_results(db, run_id, stats, lint_errors, page_details, additional_urls)
     cur = db.cursor()
 
     pass
+
+
+def is_internal_url(url):
+    base_url = _get_base_url(url)
+    link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
+    return True if link_re.match(url) else False
+
+def is_relative_url(url):
+    return False
+
+
+def make_url_absolute(url, source_url):
+    return url
+
+def _get_base_url(url):
+    res = urlparse(url)
+    return res.hostname
