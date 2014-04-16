@@ -2,7 +2,7 @@ import time
 import uuid
 import requests
 import re
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 
 import seolinter
 
@@ -82,56 +82,90 @@ CREATE TABLE `crawl_urls` (
 
 def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
-    processed_urls = []
+    processed_urls = {}
+    url_associations = {}
     run_id = uuid.uuid4()
 
+    run_count = 0
     while len(urls) > 0:
+        run_count += 1
         url = urls.pop(0)
 
-        if is_relative_url(url):
+        print "Processing (%d / %d): %s" % (run_count, len(urls), url)
+        if not is_full_url(url):
             raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
 
+<<<<<<< Updated upstream
         processed_urls.append(url)
 
+=======
+        processed_urls[url] = None
+        
+>>>>>>> Stashed changes
         results = retrieve_url(url, user_agent)
 
         for res in results:
 
             lint_errors = []
             page_details = []
-            additional_urls = []
 
-            if res['code'] == 200 and is_internal_url(res['url']):
+            if res['code'] == 200:
 
                 lint_errors, page_details, links, sources = process_html(res['content'], res['url'])
 
-                if links and len(links) > 0:
-                    for url in links:
-                        if is_relative_url(url):
-                            url = make_url_absolute(url, res['url'])
-                        if url not in processed_urls and url not in urls:
-                            urls.append(url)
+                record = store_results(db, run_id, res, lint_errors, page_details)
+                processed_urls[url] = record.id
+                url_associations[url] = {}
 
-            res = store_results(db, run_id, res, lint_errors, page_details)
+                if links and len(links) > 0:
+                    for link in links:
+                        link_url = link['url']
+
+                        # Process all external links and create the 
+                        if not is_internal_url(link_url, url):
+                            if link_url not in processed_urls:
+                                link_results = retrieve_url(link_url, user_agent, False)
+
+                                for link_result in link_results:
+                                    if link_result['code'] not in (301, 302):
+                                        link_store = store_results(db, run_id, link_result, [], [])
+                                        processed_urls[link_result['url']] = link_store.id
+
+                                # Associate links
+                                associate_link(db, record.id, link_store.id, run_id, link.get('text'), link.get('alt'), link.get('rel'))
+
+                        elif link_url not in processed_urls and link_url not in urls:
+                            urls.append(link_url)
+                            url_associations[url][link_url] = link
+            else:
+                record = store_results(db, run_id, res, lint_errors, page_details)
+                processed_urls[url] = record.id
 
         time.sleep( delay / 1000.0 )
 
+    # Process associations
+    for url, associations in url_associations.iteritems():
+        for association, link in associations.iteritems():
+            if association in processed_urls:
+                associate_link(db, processed_urls[url], processed_urls[association], run_id, link.get('text'), link.get('alt'), link.get('rel'))
 
-def retrieve_url(url, user_agent=None):
+
+def retrieve_url(url, user_agent=None, full=True):
 
     def _build_payload(response):
         return {
             'url': response.url,
+            'url_length': len(response.url),
             'content': response.text,
+            'content_type': response.headers.get('content-type'),
             'code': response.status_code,
             'reason': response.reason,
             'size': len(response.text),
             'encoding': response.encoding,
         }
-        return response.url
 
     headers = {}
-    redirects = None
+    redirects = []
     if user_agent:
         headers['User-Agent'] = user_agent
         if 'Googlebot' in user_agent:
@@ -139,25 +173,29 @@ def retrieve_url(url, user_agent=None):
             pass
 
     try:
-        start = time.time()
-        if is_internal_url(url):
+        if full:
             res = requests.get(url, headers=headers, timeout=15)
         else:
             res = requests.head(url, headers=headers, timeout=15)
 
         if len(res.history) > 0:
-            pass
+            redirects = [_build_payload(redirect) for redirect in res.history]
 
     except Exception, e:
         print e
         raise
         # TODO: Properly handle the failure. reraise?
+<<<<<<< Updated upstream
     finally:
         request_time = time.time() - start
 
 
 
     return [_build_payload(res),]
+=======
+    
+    return [_build_payload(res),] + redirects
+>>>>>>> Stashed changes
 
 
 def process_html(html, url):
@@ -182,8 +220,10 @@ def extract_links(html, url):
         return internal, external
 
     for r in res:
-        link_data = {'url': r[0], 'text': r[1]}
-        if is_internal_url(r[0]):
+        link_url = make_full_url(r[0], url)
+        link_data = {'url': link_url, 'text': r[1]}
+        # print link_url
+        if is_internal_url(link_url):
             internal.append(link_data)
         else:
             external.append(link_data)
@@ -192,7 +232,7 @@ def extract_links(html, url):
 
 
 def extract_sources(html):
-    pass
+    return {}
 
 
 def extract_page_details(html, url):
@@ -200,23 +240,29 @@ def extract_page_details(html, url):
 
 
 def store_results(db, run_id, stats, lint_errors, page_details):
-    cur = db.cursor()
-
+    # cur = db.cursor()
     pass
 
 
 def is_internal_url(url):
-    base_url = _get_base_url(url)
-    print re.escape(base_url)
-    link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
+    if is_full_url(url):
+        base_url = _get_base_url(url)
+        link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
+        return True if link_re.match(url) else False
+    else:
+        return True
+
+def is_full_url(url):
+    link_re = re.compile(r'^(http(s)?:\/\/[a-zA-Z0-9\-_]+\.[a-zA-Z]+(.)+)+')
     return True if link_re.match(url) else False
 
-def is_relative_url(url):
-    return False
+
+def make_full_url(url, source_url):
+    return urljoin(source_url, url)
 
 
-def make_url_absolute(url, source_url):
-    return url
+def associate_link(db, from_id, to_id, text, alt, rel):
+    pass
 
 def _get_base_url(url):
     res = urlparse(url)
