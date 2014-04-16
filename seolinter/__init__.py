@@ -2,7 +2,7 @@
  # -*- coding: utf-8 -*-
 
 # usage:
-# > curl http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
+# > curl --silent http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
 # or
 # seolinter.lint(requests.get('http://fashionista.com/?__escaped_fragment__=').text)
 
@@ -69,8 +69,6 @@ def parse_html(html):
     robots = soup.find('head').find('meta', attrs={"name":"robots"})
     title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
     h1 = soup.find('h1') or soup.find_all('h1')[1]
-
-    print soup.find('head').find('meta', attrs={"name":"description"})
 
     return {
         'head': soup.find('head'),
