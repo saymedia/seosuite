@@ -33,7 +33,7 @@ stop_words = ('a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'that',
             'to', 'was', 'were', 'will', 'with')
 
 rules = [
-    ('E01', 'utf8', ERROR),
+    # ('E01', 'utf8', ERROR),
     ('E02', 'has title', ERROR),
     ('W03', 'title < 58 chars', WARN),
     # ('W04', 'duplicate title', WARN),
