@@ -54,8 +54,6 @@ def retrieve_url(url, user_agent=None):
     finally:
         request_time = time.time() - start
 
-    print res.request.headers
-
     html = res.text
     stats = {
         'result_code': res.status_code,
