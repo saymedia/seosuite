@@ -133,6 +133,7 @@ def store_results(db, run_id, stats, lint_errors, page_details):
 
 def is_internal_url(url):
     base_url = _get_base_url(url)
+    print re.escape(base_url)
     link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
     return True if link_re.match(url) else False
 
