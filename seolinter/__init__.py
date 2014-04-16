@@ -2,7 +2,7 @@
  # -*- coding: utf-8 -*-
 
 # usage:
-# > curl http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
+# > curl --silent http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
 # or
 # seolinter.lint(requests.get('http://fashionista.com/?__escaped_fragment__=').text)
 
@@ -15,14 +15,12 @@ CRITICAL = 0
 ERROR = 1
 WARN = 2
 INFO = 3
-DEBUG = 4
 
 levels = (
     'critical',
     'error',
     'warning',
     'info',
-    'debug',
 )
 
 html_parser = "lxml"
@@ -33,7 +31,7 @@ stop_words = ('a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'that',
             'to', 'was', 'were', 'will', 'with')
 
 rules = [
-    ('E01', 'utf8', ERROR),
+    # ('E01', 'utf8', ERROR),
     ('E02', 'has title', ERROR),
     ('W03', 'title < 58 chars', WARN),
     # ('W04', 'duplicate title', WARN),
@@ -58,6 +56,9 @@ rules = [
     ('W23', 'h1 count > 1', WARN),
 ]
 
+def get_rules():
+    return rules
+
 def parse_html(html):
     soup = BeautifulSoup(html, html_parser)
 
@@ -69,8 +70,6 @@ def parse_html(html):
     robots = soup.find('head').find('meta', attrs={"name":"robots"})
     title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
     h1 = soup.find('h1') or soup.find_all('h1')[1]
-
-    print soup.find('head').find('meta', attrs={"name":"description"})
 
     return {
         'head': soup.find('head'),
@@ -171,10 +170,10 @@ def lint(html_string, level=INFO):
         output['E13'] = (word_match_count(p['title_keywords'], p['meta_description_keywords']), p['title_keywords'], p['meta_description_keywords'])
 
     if word_match_count(p['title_keywords'], p['h1_keywords']) < 3:
-        output['E14'] = (word_match_count(p['title_keywords'], p['h1_keywords']), p['title_keywords'], p['h1_keywords'])
+        output['W14'] = (word_match_count(p['title_keywords'], p['h1_keywords']), p['title_keywords'], p['h1_keywords'])
 
     if word_match_count(p['title_keywords'], p['meta_description_keywords']) < 3:
-        output['E15'] = (word_match_count(p['title_keywords'], p['meta_description_keywords']), p['title_keywords'], p['meta_description_keywords'])
+        output['W15'] = (word_match_count(p['title_keywords'], p['meta_description_keywords']), p['title_keywords'], p['meta_description_keywords'])
 
     images_missing_alt = []
     for image in p['images']:
@@ -182,11 +181,14 @@ def lint(html_string, level=INFO):
             images_missing_alt.append(image)
 
     if len(images_missing_alt) > 0:
-        output['W19'] = images_missing_alt
+        output['W19'] = len(images_missing_alt)
 
-    # for rule in rules:
-    #     for key in output:
-            # what was I doing here?
+    # remove rules below level requested
+    if level < INFO:
+        for rule in rules:
+            for key, value in output.iteritems():
+                if rule[2] < level:
+                    output[key].remove()
 
     return output
 
