@@ -11,14 +11,17 @@ CREATE TABLE `crawl_urls` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `run_id` varchar(36) NOT NULL DEFAULT '',
   `level` tinyint(4) unsigned NOT NULL DEFAULT '0',
-  `request_hash` varchar(36) DEFAULT NULL,
-  `content_hash` varchar(64) DEFAULT NULL,
+  `request_hash` varchar(32) DEFAULT NULL,
+  `content_hash` varchar(32) DEFAULT NULL,
+
+  # request data
   `address` varchar(2048) NOT NULL DEFAULT '',
   `domain` varchar(128) DEFAULT NULL,
   `path` varchar(2048) NOT NULL DEFAULT '',
-  `status_code` tinyint(3) unsigned DEFAULT NULL,
-  `status` varchar(16) DEFAULT NULL,
-  `body` text,
+  `external` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `status_code` tinyint(4) unsigned DEFAULT NULL,
+  `status` varchar(32) DEFAULT NULL,
+  `body` blob,
   `size` int(10) unsigned DEFAULT NULL,
   `address_length` int(10) unsigned NOT NULL,
   `encoding` varchar(16) NOT NULL DEFAULT '',
@@ -26,6 +29,8 @@ CREATE TABLE `crawl_urls` (
   `response_time` float unsigned DEFAULT NULL,
   `redirect_uri` varchar(2048) DEFAULT NULL,
   `canonical` varchar(2048) DEFAULT NULL,
+
+  # parse data
   `title_1` varchar(1024) DEFAULT NULL,
   `title_length_1` int(10) unsigned DEFAULT NULL,
   `title_occurences_1` int(10) unsigned DEFAULT NULL,
@@ -40,15 +45,20 @@ CREATE TABLE `crawl_urls` (
   `meta_robots` varchar(16) DEFAULT NULL,
   `rel_next` varchar(2048) DEFAULT NULL,
   `rel_prev` varchar(2048) DEFAULT NULL,
-  `inlinks` int(10) unsigned DEFAULT NULL,
-  `outlinks` int(10) unsigned DEFAULT NULL,
-  `external_outlinks` int(10) unsigned DEFAULT NULL,
+
+  # link data
+  # `inlinks` int(10) unsigned DEFAULT NULL,
+  # `outlinks` int(10) unsigned DEFAULT NULL,
+  # `external_outlinks` int(10) unsigned DEFAULT NULL,
+
+  # lint data
   `lint_critical` int(10) unsigned DEFAULT NULL,
   `lint_error` int(10) unsigned DEFAULT NULL,
   `lint_warn` int(10) unsigned DEFAULT NULL,
   `lint_info` int(10) unsigned DEFAULT NULL,
   `lint_results` text,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `run_id` (`run_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 """
 
