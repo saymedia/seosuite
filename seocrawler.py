@@ -21,7 +21,7 @@ def run(options):
     elif options.base_url:
         urls = [options.base_url,]
 
-    crawl(urls, db, options.internal)
+    crawl(urls, db, options.internal, options.delay)
 
 
 if __name__ == "__main__":
