@@ -86,7 +86,7 @@ def parse_html(html):
         'h1s': soup.find_all('h1'),
         'h1_count': len(soup.find_all('h1')),
         'h1_keywords': extract_keywords(h1.get_text()),
-        'text_only': soup.get_text(),
+        # 'text_only': soup.get_text(),
         'links': soup.find_all('a'),
         'link_count': len(soup.find_all('a')),
         'meta_tags': soup.find('head').find_all('meta'),
