@@ -72,7 +72,7 @@ def retrieve_url(url, user_agent=None):
             res = requests.head(url, headers=headers, timeout=15)
 
         if len(res.history) > 0:
-
+            pass
 
     except Exception, e:
         print e
@@ -83,7 +83,7 @@ def retrieve_url(url, user_agent=None):
 
 
     
-    return res.status_code, html, stats
+    return [_build_payload(res),]
 
 
 def process_html(html, url):
@@ -125,7 +125,7 @@ def extract_page_details(html, url):
     return {}
 
 
-def store_results(db, run_id, stats, lint_errors, page_details, additional_urls):
+def store_results(db, run_id, stats, lint_errors, page_details):
     cur = db.cursor()
 
     pass
