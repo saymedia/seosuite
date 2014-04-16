@@ -7,6 +7,24 @@ from urlparse import urlparse
 import seolinter
 
 sql_schema = """
+CREATE TABLE `crawl_links` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `run_id` varchar(36) NOT NULL DEFAULT '',
+  `request_hash` varchar(32) DEFAULT NULL,
+
+  # request data
+  `from_id` int(10) unsigned NOT NULL,
+  `to_id` int(10) unsigned NOT NULL,
+  `link_text` varchar(1024) DEFAULT NULL,
+  `alt_text` varchar(1024) DEFAULT NULL,
+  `rel` varchar(1024) DEFAULT NULL,
+
+  PRIMARY KEY (`id`),
+  KEY `run_id` (`run_id`),
+  KEY `from_id` (`from_id`),
+  KEY `to_id` (`to_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `crawl_urls` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `run_id` varchar(36) NOT NULL DEFAULT '',
