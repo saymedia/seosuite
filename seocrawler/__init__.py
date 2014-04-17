@@ -163,7 +163,7 @@ def retrieve_url(url, user_agent=None, full=True):
         print e
         raise
     finally:
-        request_time = time.time() - start        
+        request_time = time.time() - start
         # TODO: Properly handle the failure. reraise?
 
     return [_build_payload(res, request_time),] + redirects
@@ -269,7 +269,7 @@ INSERT INTO `crawl_urls` VALUES (
     0, %s, 0, %s,
     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-    %s, %s, %s, %s, %s)
+    %s, %s, %s, %s, %s, NOW())
     '''
 
     try:

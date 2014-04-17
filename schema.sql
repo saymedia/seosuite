@@ -62,6 +62,8 @@ CREATE TABLE `crawl_urls` (
   `lint_warn` int(10) unsigned DEFAULT NULL,
   `lint_info` int(10) unsigned DEFAULT NULL,
   `lint_results` text,
+
+  `timestamp` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `run_id` (`run_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
