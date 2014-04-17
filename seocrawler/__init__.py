@@ -236,7 +236,7 @@ def extract_sources(html, url):
     sources = []
 
     soup = BeautifulSoup(html, html_parser)
-    links = soup.find_all(['img', 'link', 'script', 'style'])
+    links = soup.find_all(['img', 'link', 'script', 'style', 'meta'])
 
     for link in links:
         source_url = link.get('src') or link.get('href')
