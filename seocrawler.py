@@ -5,6 +5,7 @@ import json
 import MySQLdb
 
 from seocrawler import crawl
+from seoreporter import report
 
 
 def run(options):
@@ -26,7 +27,8 @@ def run(options):
         urls = [options.base_url,]
     elif options.run_id:
         cur = db.cursor()
-        cur.execute('SELECT * FROM crawl_save WHERE run_id = %s', (options.run_id,))
+        cur.execute('SELECT * FROM crawl_save WHERE run_id = %s',
+            (options.run_id,))
         run = cur.fetchone()
         if not run:
             raise Exception('No instance found matching the supplied run_id.')
@@ -35,10 +37,15 @@ def run(options):
         url_associations = json.loads(run[3])
         run_id = options.run_id
 
-        cur.execute('SELECT id, address FROM crawl_urls WHERE run_id = %s', (options.run_id,))
+        cur.execute('SELECT id, address FROM crawl_urls WHERE run_id = %s',
+            (options.run_id,))
         processed_urls = dict([(row[1], row[0]) for row in cur.fetchall()])
 
-    crawl(urls, db, options.internal, options.delay, options.user_agent, url_associations, run_id, processed_urls)
+    run_id = crawl(urls, db, options.internal, options.delay,
+        options.user_agent, url_associations, run_id, processed_urls)
+
+    if options.output:
+        options.output.write(report(db, 'build', 'junit', run_id))
 
 
 if __name__ == "__main__":
@@ -61,6 +68,8 @@ if __name__ == "__main__":
     parser.add_argument('--delay', type=int, default=0,
         help='The number of milliseconds to delay between each request.')
 
+    parser.add_argument('-o', '--output', type=argparse.FileType('w'),
+        help='The path of the file where the output junix xml will be written to.')
 
     args = parser.parse_args()
 

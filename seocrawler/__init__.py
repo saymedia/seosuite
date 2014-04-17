@@ -129,6 +129,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
             if association in processed_urls:
                 associate_link(db, processed_urls[url], processed_urls[association], run_id, link.get('text'), link.get('alt'), link.get('rel'))
 
+    return run_id
 
 def retrieve_url(url, user_agent=None, full=True):
 
