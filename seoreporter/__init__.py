@@ -29,103 +29,105 @@ def build_report(db, run_id):
 
     # 500 errors
     # TODO add other error codes
-    c.execute('''SELECT COUNT(id) as count FROM crawl_urls
-        WHERE run_id = %s AND (status_code = 500 or status_code = 0)
-        ORDER BY timestamp DESC''', [run_id])
-    result = c.fetchone()
+    c.execute('''SELECT address FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND (status_code = 500 or status_code = 0)
+        ORDER BY timestamp ASC''', [run_id])
+    results = c.fetchall()
     output.append({
         'name': '500 errors',
-        'value': result[0],
+        'values': [result[0] for result in results],
         })
 
     # 404s
-    c.execute('''SELECT COUNT(id) as count FROM crawl_urls
-        WHERE run_id = %s AND status_code = 404
-        ORDER BY timestamp DESC''', [run_id])
-    result = c.fetchone()
+    c.execute('''SELECT address FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND status_code = 404
+        ORDER BY timestamp ASC''', [run_id])
+    results = c.fetchall()
     output.append({
         'name': '404s',
-        'value': result[0],
+        'values': [result[0] for result in results],
         })
 
     # missing canonicals
-    c.execute('''SELECT COUNT(id) as count FROM crawl_urls
-        WHERE run_id = %s AND canonical IS NULL
-        ORDER BY timestamp DESC''', [run_id])
-    result = c.fetchone()
+    c.execute('''SELECT address FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND canonical IS NULL
+        ORDER BY timestamp ASC''', [run_id])
+    results = c.fetchall()
     output.append({
         'name': 'missing canonical',
-        'value': result[0],
+        'values': [result[0] for result in results],
         })
 
     # missing titles
-    c.execute('''SELECT COUNT(id) as count FROM crawl_urls
-        WHERE run_id = %s AND title_1 IS NULL
-        ORDER BY timestamp DESC''', [run_id])
-    result = c.fetchone()
+    c.execute('''SELECT address FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND title_1 IS NULL
+        ORDER BY timestamp ASC''', [run_id])
+    results = c.fetchall()
     output.append({
         'name': 'missing title',
-        'value': result[0],
+        'values': [result[0] for result in results],
         })
 
     # missing meta descriptions
-    c.execute('''SELECT COUNT(id) as count FROM crawl_urls
-        WHERE run_id = %s AND meta_description_1 IS NULL
-        ORDER BY timestamp DESC''', [run_id])
-    result = c.fetchone()
+    c.execute('''SELECT address FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND meta_description_1 IS NULL
+        ORDER BY timestamp ASC''', [run_id])
+    results = c.fetchall()
     output.append({
         'name': 'missing meta_description',
-        'value': result[0],
+        'values': [result[0] for result in results],
         })
 
     # lint level critical
-    c.execute('''SELECT COUNT(id) as count FROM crawl_urls
-        WHERE run_id = %s AND lint_critical > 0
-        ORDER BY timestamp DESC''', [run_id])
-    result = c.fetchone()
+    c.execute('''SELECT address FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND lint_critical > 0
+        ORDER BY timestamp ASC''', [run_id])
+    results = c.fetchall()
     output.append({
         'name': 'lint level critical',
-        'value': result[0],
+        'values': [result[0] for result in results],
         })
 
     # lint level error
-    c.execute('''SELECT COUNT(id) as count FROM crawl_urls
-        WHERE run_id = %s AND lint_error > 0
-        ORDER BY timestamp DESC''', [run_id])
-    result = c.fetchone()
+    c.execute('''SELECT address FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND lint_error > 0
+        ORDER BY timestamp ASC''', [run_id])
+    results = c.fetchall()
     output.append({
         'name': 'lint level error',
-        'value': result[0],
+        'values': [result[0] for result in results],
         })
 
     return output
 
+
+# junit schema:
+# https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model\
+# /src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd
 def junit_format(report_type, tests, run_id):
-    print tests
     output = '<?xml version="1.0" encoding="UTF-8"?>\n'
     output += '''<testsuite
-        name="%s"
+        name="seoreporter-%s"
         tests="%s"
         timestamp="%s"
         time=""
-        disabled=""
         errors="%s"
-        failures="%s"
+        failures=""
         id="%s"
         package="seoreporter"
         skipped="0">\n''' % (
         report_type,
         len(tests),
         datetime.datetime.utcnow(),
-        sum([test['value'] for test in tests if 'value' in test]),
-        len([test['value'] for test in tests if 'value' in test and test['value'] > 0]),
+        sum([len(test['values']) for test in tests if 'values' in test and test['values'] > 0]),
         run_id
         )
 
     for test in tests:
-        output += '\t<testcase class="%s" name="%s">\n' % (report_type, test['name'])
-        if test['value'] and test['value'] > 0:
-            output += '\t\t<failure type="value">%s</failure>\n' % (test['value'])
+        output += '\t<testcase name="%s">\n' % (test['name'])
+        if test['values'] and len(test['values']) > 0:
+            # put everything in one element because jenkins ignores > 1
+            output += '\t\t<error type="addresses">%s</failure>\n' % (str(test['values']))
         output += '\t</testcase>\n'
 
     output += '</testsuite>'
