@@ -151,7 +151,7 @@ def extract_links(html, url):
     for a_tag in soup.find_all('a'):
         links.append({
             'url': make_full_url(a_tag.get('href'), url),
-            'text': a_tag.get_text(),
+            'text': a_tag.string or a_tag.get_text(),
             'alt': a_tag.get('alt'),
             'rel': a_tag.get('rel'),
             })
@@ -306,8 +306,8 @@ INSERT INTO `crawl_links` VALUES(0, %s, null, %s, %s, %s, %s, %s)
             run_id,
             from_id,
             to_id,
-            text,
-            alt,
+            text.encode('ascii', 'ignore'),
+            alt.encode('ascii', 'ignore'),
             rel,
             ))
         db.commit()
