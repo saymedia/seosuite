@@ -27,7 +27,7 @@ CREATE TABLE `crawl_urls` (
   # request data
   `address` varchar(2048) NOT NULL DEFAULT '',
   `domain` varchar(128) DEFAULT NULL,
-  `path` varchar(2048) NOT NULL DEFAULT '',
+  `path` varchar(2048) DEFAULT NULL,
   `external` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `status_code` int(10) unsigned DEFAULT NULL,
   `status` varchar(32) DEFAULT NULL,

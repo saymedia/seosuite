@@ -52,8 +52,16 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
                     for link in links:
                         link_url = link['url']
 
-                        # Process all external links and create the
-                        if not is_internal_url(link_url, url):
+                        if not link['valid']:
+                            # Process any malformed links
+                            bad_link = store_results(db, run_id, {
+                                'url': link_url,
+                                'code': 9999,
+                                }, {}, {}, None, False)
+                            processed_urls[link_url] = bad_link
+                            associate_link(db, record, bad_link, run_id, link.get('text'), link.get('alt'), link.get('rel'))
+                        elif not is_internal_url(link_url, url):
+                            # Process all external links and create the
                             if link_url not in processed_urls:
                                 link_results = retrieve_url(link_url, user_agent, False)
 
@@ -149,12 +157,21 @@ def extract_links(html, url):
     soup = BeautifulSoup(html, html_parser)
 
     for a_tag in soup.find_all('a'):
-        links.append({
-            'url': make_full_url(a_tag.get('href'), url),
-            'text': a_tag.string or a_tag.get_text(),
-            'alt': a_tag.get('alt'),
-            'rel': a_tag.get('rel'),
-            })
+        valid = True
+        try:
+            full_url = make_full_url(a_tag.get('href'), url)
+        except Exception:
+            full_url = a_tag.get('href')
+            valid = False
+
+        if full_url: # Ignore any a tags that don't have an href
+            links.append({
+                'url': full_url,
+                'valid': valid,
+                'text': a_tag.string or a_tag.get_text(),
+                'alt': a_tag.get('alt'),
+                'rel': a_tag.get('rel'),
+                })
 
     return links
 
@@ -207,7 +224,7 @@ def extract_page_details(html, url):
     }
 
 
-def store_results(db, run_id, stats, lint_errors, page_details, external=False):
+def store_results(db, run_id, stats, lint_errors, page_details, external=False, valid=True):
     cur = db.cursor()
 
     insert = '''
@@ -228,8 +245,8 @@ INSERT INTO `crawl_urls` VALUES (
 
             # request data
             stats.get('url'),                                   # address
-            _get_base_url(url),                                 # domain
-            _get_path(url),                                     # path
+            _get_base_url(url) if valid else None,              # domain
+            _get_path(url) if valid else None,                  # path
             1 if external else 0,                               # external
             stats.get('code'),                                  # status_code
             stats.get('reason'),                                # status
