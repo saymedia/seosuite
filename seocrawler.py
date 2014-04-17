@@ -1,6 +1,7 @@
 import yaml
 import argparse
 import json
+import os
 
 import MySQLdb
 
@@ -10,10 +11,18 @@ from seoreporter import report
 
 def run(options):
 
-    env = yaml.load(open('config.yaml'))
+    if options.database:
+        env = yaml.load(options.database)
+        db_conf = env.get('db', {})
+    else:
+        db_conf = {
+            'host': os.environ.get('SEO_DB_HOSTNAME'),
+            'user': os.environ.get('SEO_DB_USERNAME'),
+            'pass': os.environ.get('SEO_DB_PASSWORD'),
+            'name': os.environ.get('SEO_DB_DATABASE'),
+        }
 
     # Initialize the database cursor
-    db_conf = env.get('db', {})
     db = MySQLdb.connect(host=db_conf.get('host'), user=db_conf.get('user'),
         passwd=db_conf.get('pass'), db=db_conf.get('name'))
 
@@ -25,6 +34,9 @@ def run(options):
         urls = [url.strip() for url in options.file.readlines()]
     elif options.base_url:
         urls = [options.base_url,]
+    elif options.yaml:
+        url_yaml = yaml.load(options.yaml)
+        urls = url_yaml.get('seocrawlerurls')
     elif options.run_id:
         cur = db.cursor()
         cur.execute('SELECT * FROM crawl_save WHERE run_id = %s',
@@ -59,14 +71,20 @@ if __name__ == "__main__":
         help='A single url to use as a starting point for crawling.')
     inputs.add_argument('-r', '--run_id', type=str,
         help='The id from a previous run to resume.')
+    inputs.add_argument('-y', '--yaml', type=file,
+        help='A yaml file containing a list of urls to process. The yaml file should have a section labeled "seocrawlerurls" that contains a list of the urls to crawl.')
 
     # Processing options
     parser.add_argument('-i', '--internal', action="store_true",
         help='Crawl any internal link urls that are found in the content of the page.')
-    parser.add_argument('--user-agent', type=str, default='Twitterbot/1.0',
+    parser.add_argument('--user-agent', type=str, default='Twitterbot/1.0 (SEO Crawler)',
         help='The user-agent string to request pages with.')
     parser.add_argument('--delay', type=int, default=0,
         help='The number of milliseconds to delay between each request.')
+
+    parser.add_argument('--database', type=file,
+        help='A yaml configuration file with the database configuration properties.')
+
 
     parser.add_argument('-o', '--output', type=argparse.FileType('w'),
         help='The path of the file where the output junix xml will be written to.')
