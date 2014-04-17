@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS `crawl_links`;
 CREATE TABLE `crawl_links` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `run_id` varchar(36) NOT NULL DEFAULT '',
-  `request_hash` varchar(32) DEFAULT NULL,
+  `type` varchar(32) DEFAULT NULL, -- 'link' or 'source'
 
   # request data
   `from_id` int(10) unsigned NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE `crawl_urls` (
   `path` varchar(2048) DEFAULT NULL,
   `external` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `status_code` int(10) unsigned DEFAULT NULL,
-  `status` varchar(32) DEFAULT NULL,
+  `status` varchar(255) DEFAULT NULL,
   `body` longblob,
   `size` int(10) unsigned DEFAULT NULL,
   `address_length` int(10) unsigned NOT NULL,

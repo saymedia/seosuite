@@ -5,6 +5,7 @@ import uuid
 import requests
 import re
 import hashlib
+import json
 from urlparse import urlparse, urljoin
 
 from bs4 import BeautifulSoup
@@ -48,6 +49,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
                 processed_urls[url] = record
                 url_associations[url] = {}
 
+                # Process links from the page
                 if links and len(links) > 0:
                     for link in links:
                         link_url = link['url']
@@ -56,26 +58,44 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
                             # Process any malformed links
                             bad_link = store_results(db, run_id, {
                                 'url': link_url,
-                                'code': 9999,
+                                'code': 0,
                                 }, {}, {}, None, False)
                             processed_urls[link_url] = bad_link
-                            associate_link(db, record, bad_link, run_id, link.get('text'), link.get('alt'), link.get('rel'))
+                            associate_link(db, record, bad_link, run_id, 'anchor', link.get('text'), link.get('alt'), link.get('rel'))
                         elif not is_internal_url(link_url, url):
                             # Process all external links and create the
                             if link_url not in processed_urls:
                                 link_results = retrieve_url(link_url, user_agent, False)
 
                                 for link_result in link_results:
-                                    if link_result['code'] not in (301, 302):
-                                        link_store = store_results(db, run_id, link_result, {}, {}, True)
-                                        processed_urls[link_result['url']] = link_store
+                                    link_store = store_results(db, run_id, link_result, {}, {}, True)
+                                    processed_urls[link_result['url']] = link_store
 
-                                # Associate links
-                                associate_link(db, record, link_store, run_id, link.get('text'), link.get('alt'), link.get('rel'))
+                                    # Associate links
+                                    associate_link(db, record, link_store, run_id, 'anchor', link.get('text'), link.get('alt'), link.get('rel'))
+                            else:
+                                associate_link(db, record, processed_urls[link_url], run_id, 'anchor', link.get('text'), link.get('alt'), link.get('rel'))
 
                         elif internal and link_url not in processed_urls and link_url not in urls:
                             urls.append(link_url)
                             url_associations[url][link_url] = link
+
+                # Process sources from the page
+                if sources and len(sources) > 0:
+                    for source in sources:
+                        source_url = source['url']
+
+                        if source_url not in processed_urls:
+                            source_results = retrieve_url(source_url, user_agent, False)
+
+                            for source_result in source_results:
+                                source_store = store_results(db, run_id, source_result, {}, {}, is_internal_url(source_result['url'], url))
+                                processed_urls[source_result['url']] = source_store
+                                associate_link(db, record, source_store, run_id, 'asset', None, source.get('alt'), None)
+
+                        else:
+                            associate_link(db, record, processed_urls[source_url], run_id, 'asset', None, source.get('alt'), None)
+
             else:
                 record = store_results(db, run_id, res, lint_errors, page_details, False)
                 processed_urls[url] = record
@@ -92,14 +112,16 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
 def retrieve_url(url, user_agent=None, full=True):
 
     def _build_payload(response, request_time):
+        size = response.headers.get('content-length') or len(response.text)
+        content_type = response.headers.get('content-type')
         return {
             'url': response.url,
             'url_length': len(response.url),
             'content': response.text,
-            'content_type': response.headers.get('content-type'),
+            'content_type': content_type.split(';')[0] if content_type else None,
             'code': int(response.status_code),
             'reason': response.reason,
-            'size': len(response.text),
+            'size': size,
             'encoding': response.encoding,
             'response_time': request_time,
         }
@@ -123,19 +145,19 @@ def retrieve_url(url, user_agent=None, full=True):
             redirects = [_build_payload(redirect) for redirect in res.history]
 
     except requests.exceptions.Timeout, e:
-        return {
+        return [{
             'url': url,
             'url_length': len(url),
             'code': 0,
             'reason': 'Timeout %s' % TIMEOUT
-            }
+            }]
     except requests.exceptions.ConnectionError, e:
-        return {
+        return [{
             'url': url,
             'url_length': len(url),
             'code': 0,
             'reason': 'Connection Error %s' % e
-            }
+            }]
     except Exception, e:
         print e
         raise
@@ -154,7 +176,7 @@ def process_html(html, url):
 
     links = extract_links(html, url)
 
-    sources = extract_sources(html)
+    sources = extract_sources(html, url)
 
     return lint_errors, page_details, links, sources
 
@@ -183,16 +205,23 @@ def extract_links(html, url):
     return links
 
 
-def extract_sources(html):
+def extract_sources(html, url):
     sources = []
 
     soup = BeautifulSoup(html, html_parser)
-    links = soup.find(['img', 'link', 'script', 'style'])
+    links = soup.find_all(['img', 'link', 'script', 'style'])
 
     for link in links:
+        source_url = link.get('src') or link.get('href')
+        if not source_url:
+            continue
+        if not is_full_url(source_url):
+            full_url = make_full_url(source_url, url)
+        else:
+            full_url = source_url
         sources.append({
-            'url': link.get('src') or link.get('href'),
-            'alt_text': unicode(link.get('alt')),
+            'url': full_url,
+            'alt': link.get('alt'),
             })
 
     return sources
@@ -246,9 +275,10 @@ INSERT INTO `crawl_urls` VALUES (
         url = stats.get('url')
         content = stats.get('content', '')
         content_hash = hashlib.sha256(content.encode('ascii', 'ignore')).hexdigest()
+        lint_keys = [k.upper() for k in lint_errors.keys()]
         cur.execute(insert, (
             run_id,
-            content_hash,                                       # content_hash
+            content_hash if content else None,                  # content_hash
 
             # request data
             stats.get('url'),                                   # address
@@ -283,11 +313,11 @@ INSERT INTO `crawl_urls` VALUES (
             page_details.get('rel_prev'),                       # rel_prev
 
             # lint data
-            len(lint_errors.get('critical', [])),               # lint_critical
-            len(lint_errors.get('error', [])),                  # lint_error
-            len(lint_errors.get('warn', [])),                   # lint_warn
-            len(lint_errors.get('info', [])),                   # lint_info
-            ''                                                  # lint_results
+            len([l for l in lint_keys if l[0] == 'C']),         # lint_critical
+            len([l for l in lint_keys if l[0] == 'E']),         # lint_error
+            len([l for l in lint_keys if l[0] == 'W']),         # lint_warn
+            len([l for l in lint_keys if l[0] == 'I']),         # lint_info
+            json.dumps(lint_errors)                             # lint_results
             ))
         db.commit()
     except:
@@ -315,19 +345,21 @@ def is_full_url(url):
 
 
 def make_full_url(url, source_url):
-    return urljoin(source_url, url)
+    full = urljoin(source_url, url)
+    return full.split('#')[0]
 
 
-def associate_link(db, from_id, to_id, run_id, text, alt, rel):
+def associate_link(db, from_id, to_id, run_id, link_type, text, alt, rel):
     cur = db.cursor()
 
     association = '''
-INSERT INTO `crawl_links` VALUES(0, %s, null, %s, %s, %s, %s, %s)
+INSERT INTO `crawl_links` VALUES(0, %s, %s, %s, %s, %s, %s, %s)
     '''
 
     try:
         cur.execute(association, (
             run_id,
+            link_type,
             from_id,
             to_id,
             text.encode('ascii', 'ignore') if text else None,
