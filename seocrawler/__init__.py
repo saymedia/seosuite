@@ -101,9 +101,9 @@ def retrieve_url(url, user_agent=None, full=True):
 
     try:
         if full:
-            res = requests.get(url, headers=headers, timeout=15)
+            res = requests.get(url, headers=headers, timeout=16)
         else:
-            res = requests.head(url, headers=headers, timeout=15)
+            res = requests.head(url, headers=headers, timeout=16)
 
         if len(res.history) > 0:
             redirects = [_build_payload(redirect) for redirect in res.history]
@@ -192,7 +192,6 @@ INSERT INTO `crawl_urls` VALUES (
         url = stats.get('url')
         content = stats.get('content', '')
         content_hash = hashlib.sha256(content.encode('ascii', 'ignore')).hexdigest()
-        print stats.get('code')
         cur.execute(insert, (
             run_id,
             content_hash,                                       # content_hash

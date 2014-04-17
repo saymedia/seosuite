@@ -35,7 +35,7 @@ if __name__ == "__main__":
         help='A single url to use as a starting point for crawling.')
 
     # Processing options
-    parser.add_argument('-i', '--internal', type=bool, default=False,
+    parser.add_argument('-i', '--internal', action="store_true",
         help='Crawl any internal link urls that are found in the content of the page.')
     parser.add_argument('--user-agent', type=str, default='Twitterbot/1.0',
         help='The user-agent string to request pages with.')

@@ -34,7 +34,7 @@ CREATE TABLE `crawl_urls` (
   `body` longblob,
   `size` int(10) unsigned DEFAULT NULL,
   `address_length` int(10) unsigned NOT NULL,
-  `encoding` varchar(16) NOT NULL DEFAULT '',
+  `encoding` varchar(16) DEFAULT NULL,
   `content_type` varchar(64) DEFAULT NULL,
   `response_time` float unsigned DEFAULT NULL,
   `redirect_uri` varchar(2048) DEFAULT NULL,
