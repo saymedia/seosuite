@@ -306,8 +306,8 @@ INSERT INTO `crawl_links` VALUES(0, %s, null, %s, %s, %s, %s, %s)
             run_id,
             from_id,
             to_id,
-            text.encode('ascii', 'ignore'),
-            alt.encode('ascii', 'ignore'),
+            text.encode('ascii', 'ignore') if text else None,
+            alt.encode('ascii', 'ignore') if alt else None,
             rel,
             ))
         db.commit()
