@@ -25,7 +25,7 @@ def build_report(db, run_id):
 
     c = db.cursor()
 
-    urls = fetch_latest_run(db, run_id)
+    urls = fetch_run(db, run_id)
 
     # 500 errors
     # TODO add other error codes
@@ -145,7 +145,7 @@ def report(db, report_type, report_format, run_id):
         return junit_format(report_type, report_data, run_id)
 
 
-def fetch_latest_run(db, run_id):
+def fetch_run(db, run_id):
     c = db.cursor()
     c.execute('SELECT * FROM crawl_urls WHERE run_id = %s ORDER BY timestamp DESC', [run_id])
     return c.fetchall()
@@ -168,7 +168,7 @@ def run():
     # Initialize the database cursor
     db_conf = env.get('db', {})
     db = MySQLdb.connect(host=db_conf.get('host'), user=db_conf.get('user'),
-        passwd=db_conf.get('pass'), db=db_conf.get('name'))
+        passwd=db_conf.get('pass'), db=db_conf.get('name'), use_unicode=True)
 
     # get the latest run_id
     run_id = fetch_latest_run_id(db)
