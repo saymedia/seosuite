@@ -11,7 +11,7 @@ from flask import Flask, render_template, request
 app = Flask(__name__, template_folder='.')
 db = None
 
-default_page_length = 10
+default_page_length = 50
 
 
 def fetch_latest_run_id():
