@@ -1,4 +1,3 @@
- #!/usr/bin/python
  # -*- coding: utf-8 -*-
 
 # usage:
@@ -70,6 +69,7 @@ def parse_html(html):
     robots = soup.find('head').find('meta', attrs={"name":"robots"})
     title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
     h1 = soup.find('h1') or soup.find_all('h1')[1]
+    meta_description = soup.find('head').find('meta', attrs={"name":"description"})
 
     return {
         'head': soup.find('head'),
@@ -79,9 +79,9 @@ def parse_html(html):
         'next': soup.find('head').find('link', attrs={"rel":"next"}),
         'prev': soup.find('head').find('link', attrs={"rel":"prev"}),
         'robots': robots.get("content") if robots else None,
-        'meta_description': soup.find('head').find('meta', attrs={"name":"description"}),
+        'meta_description': meta_description,
         'meta_description_keywords':
-            extract_keywords(soup.find('head').find('meta', attrs={"name":"description"}).get('content')),
+            extract_keywords(meta_description.get('content')) if meta_description else [],
         'h1': h1,
         'h1s': soup.find_all('h1'),
         'h1_count': len(soup.find_all('h1')),

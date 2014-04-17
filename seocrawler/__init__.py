@@ -1,3 +1,5 @@
+ # -*- coding: utf-8 -*-
+
 import time
 import uuid
 import requests
@@ -11,6 +13,8 @@ import seolinter
 
 html_parser = "lxml"
 # html_parser = "html.parser"
+
+TIMEOUT = 16
 
 def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
@@ -101,13 +105,20 @@ def retrieve_url(url, user_agent=None, full=True):
 
     try:
         if full:
-            res = requests.get(url, headers=headers, timeout=16)
+            res = requests.get(url, headers=headers, timeout=TIMEOUT)
         else:
-            res = requests.head(url, headers=headers, timeout=16)
+            res = requests.head(url, headers=headers, timeout=TIMEOUT)
 
         if len(res.history) > 0:
             redirects = [_build_payload(redirect) for redirect in res.history]
 
+    except requests.exceptions.Timeout, e:
+        return {
+            'url': url,
+            'url_length': len(url),
+            'code': 0,
+            'reason': 'Timeout ' + TIMEOUT
+            }
     except Exception, e:
         print e
         raise
@@ -145,7 +156,18 @@ def extract_links(html, url):
 
 
 def extract_sources(html):
-    return {}
+    sources = []
+
+    soup = BeautifulSoup(html, html_parser)
+    links = soup.find(['img', 'link', 'script', 'style'])
+
+    for link in links:
+        sources.append({
+            'url': link.get('src') or link.get('href'),
+            'alt_text': unicode(link.get('alt')),
+            })
+
+    return sources
 
 
 def extract_page_details(html, url):
@@ -158,18 +180,22 @@ def extract_page_details(html, url):
     rel_next = soup.find('head').find('link', attrs={'rel':'next'})
     rel_prev = soup.find('head').find('link', attrs={'rel':'prev'})
     title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
+    meta_description = soup.find('head').find('meta', attrs={"name":"description"})
+    canonical = soup.find('head').find('link', attrs={"rel":"canonical"})
+    h1_1 = soup.find('h1')
+    h1_2 = soup.find_all('h1')[1] if len(soup.find_all('h1')) > 1 else None
 
     return {
         'size': len(html),
-        'canonical': soup.find('head').find('link', attrs={"rel":"canonical"}).get("href"),
+        'canonical': canonical.get("href") if canonical else None,
         'title_1': title,
         'title_length_1': len(title),
-        'meta_description_1': soup.find('head').find('meta', attrs={"name":"description"}).get("content"),
-        'meta_description_length_1': len(soup.find('head').find('meta', attrs={"name":"description"})),
-        'h1_1': soup.find('h1').get_text(),
-        'h1_length_1': len(soup.find('h1').get_text()),
-        'h1_2': soup.find_all('h1')[1].get_text(),
-        'h1_length_2': len(soup.find_all('h1')[1].get_text()),
+        'meta_description_1': meta_description.get("content") if meta_description else None,
+        'meta_description_length_1': len(meta_description) if meta_description else 0,
+        'h1_1': h1_1.get_text() if h1_1 else None,
+        'h1_length_1': len(h1_1.get_text()) if h1_1 else 0,
+        'h1_2': h1_2.get_text() if h1_2 else None,
+        'h1_length_2': len(h1_2.get_text()) if h1_2 else 0,
         'h1_count': len(soup.find_all('h1')),
         'meta_robots': robots.get("content") if robots else None,
         'rel_next': rel_next.get("href") if rel_next else None,
@@ -195,7 +221,7 @@ INSERT INTO `crawl_urls` VALUES (
         cur.execute(insert, (
             run_id,
             content_hash,                                       # content_hash
-            
+
             # request data
             stats.get('url'),                                   # address
             _get_base_url(url),                                 # domain
