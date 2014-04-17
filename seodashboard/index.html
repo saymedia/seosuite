@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>SEO Dashboard</title>
@@ -9,18 +9,31 @@
     <style>
         .True { background-color: green; }
         .False { background-color: red; }
-        table { border-collapse:collapse; }
-        table, th, td { border-bottom: 1px solid black; padding: 2px; }
     </style>
 </head>
 <body>
-    <table id="navigation">
+
+    <h2>Run Ids</h2>
+    <ul>
+        {% for id in run_ids %}
+            {% if id == run_id %}
+                <li><b><a href="/?run_id={{ id }}">{{ id }}</a></b></li>
+            {% else %}
+                <li><a href="/?run_id={{ id }}">{{ id }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <h2>Crawl Data</h2>
+    <table class="table table-striped table-condensed">
         <thead>
             <th>id</th>
             <th>domain</th>
             <th>path</th>
             <th>status code</th>
+
             <th colspan="4">links</th>
+
             <th>title</th>
             <th>canonical</th>
             <th>description</th>
@@ -30,27 +43,39 @@
             <th>size</th>
             <th>link count</th>
         </thead>
+
         {% for url in crawl_urls %}
             <tr>
                 <td>{{ url.id }}</td>
                 <td>{{ url.domain }}</td>
                 <td>{{ url.path }}</td>
                 <td>{{ url.status_code }}</td>
-                <td><a href=\"{{ url.bot_url }}\">bot</a></td>
-                <td><a href=\"{{ url.local_url }}\">local</a></td>
-                <td><a href=\"{{ url.origin_url }}\">origin</a></td>
-                <td><a href=\"{{ url.live_url }}\">live</a></td>
-                <td class="{{ url.id }}">{{ url.title_1 }}</td>
-                <td class="{{ url.id }}">{{ url.canonical }}</td>
-                <td class="{{ url.id }}">{{ url.meta_description_1 }}</td>
-                <td class="{{ url.id }}">{{ url.h1_1 }}</td>
-                <td class="{{ url.id }}">{{ url.rel_next }}</td>
-                <td class="{{ url.id }}">{{ url.rel_prev }}</td>
-                <td class="{{ url.id }}">{{ url.size }}</td>
-                <td class="{{ url.id }}">{{ url.link_count }}</td>
+
+                <td><a href="{{ url.bot_url }}">bot</a></td>
+                <td><a href="{{ url.local_url }}">local</a></td>
+                <td><a href="{{ url.origin_url }}">origin</a></td>
+                <td><a href="{{ url.live_url }}">live</a></td>
+
+                <td class="{{ url.title_1 }}">{{ url.title_1 }}</td>
+                <td class="{{ url.canonical }}">{{ url.canonical }}</td>
+                <td class="{{ url.meta_description_1 }}">{{ url.meta_description_1 }}</td>
+                <td class="{{ url.h1_1 }}">{{ url.h1_1 }}</td>
+                <td class="{{ url.rel_next }}">{{ url.rel_next }}</td>
+                <td class="{{ url.rel_prev }}">{{ url.rel_prev }}</td>
+                <td class="{{ url.size }}">{{ url.size }}</td>
+                <td class="{{ url.link_count }}">{{ url.link_count }}</td>
             </tr>
         {% endfor %}
     </table>
+
+    <ul>
+        {% if prev_page %}
+            <li class="btn"><a href="/?run_id={{ run_id }}&page={{ prev_page }}">Prev Page</a></li>
+        {% endif %}
+        {% if next_page %}
+            <li class="btn"><a href="/?run_id={{ run_id }}&page={{ next_page }}">Next Page</a></li>
+        {% endif %}
+    </ul>
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>

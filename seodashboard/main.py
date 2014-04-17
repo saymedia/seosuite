@@ -7,9 +7,11 @@ import yaml
 
 import MySQLdb
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 app = Flask(__name__, template_folder='.')
 db = None
+
+default_page_length = 10
 
 
 def fetch_latest_run_id():
@@ -22,10 +24,25 @@ def fetch_latest_run_id():
     return run_id
 
 
-def fetch_run(run_id):
+def fetch_run(run_id, page=1, page_length=default_page_length):
     c = db.cursor()
-    c.execute('SELECT * FROM crawl_urls WHERE run_id = %s ORDER BY timestamp ASC', [run_id])
+    start = (page - 1) * page_length
+    c.execute('SELECT * FROM crawl_urls WHERE run_id = %s ORDER BY timestamp ASC LIMIT %s, %s',
+        [run_id, start, page_length])
     return c.fetchall()
+
+
+def fetch_run_count(run_id):
+    c = db.cursor()
+    c.execute('SELECT COUNT(id) as count FROM crawl_urls WHERE run_id = %s', [run_id])
+    result = c.fetchone()
+    return int(result[0]) if result else 0
+
+
+def fetch_run_ids():
+    c = db.cursor()
+    c.execute('SELECT DISTINCT run_id FROM crawl_urls ORDER BY timestamp ASC')
+    return [result[0] for result in c.fetchall()]
 
 
 def cols_to_props(results):
@@ -80,9 +97,24 @@ def cols_to_props(results):
 
 @app.route("/")
 def hello():
-    run_id = fetch_latest_run_id()
-    crawl_urls = fetch_run(run_id)
-    return render_template('index.html', run_id=run_id, crawl_urls=cols_to_props(crawl_urls),)
+    run_id = request.args.get('run_id', fetch_latest_run_id())
+    page = int(request.args.get('page', 1))
+    page_length = int(request.args.get('page_length', default_page_length))
+
+
+    crawl_urls = fetch_run(run_id, page, page_length)
+    crawl_url_count = fetch_run_count(run_id)
+    run_ids = fetch_run_ids()
+
+    print [page, crawl_url_count, page_length]
+
+    return render_template('index.html',
+        run_id=run_id,
+        run_ids=run_ids,
+        crawl_urls=cols_to_props(crawl_urls),
+        prev_page=(page - 1 if page > 1 else None),
+        next_page=(page + 1 if page < crawl_url_count/page_length else None),
+        )
 
 
 if __name__ == "__main__":
