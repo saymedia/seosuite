@@ -146,15 +146,15 @@ def process_html(html, url):
 
 def extract_links(html, url):
     links = []
-    href_re = re.compile(r'<a.*?href=[\'"](?P<link>.*?)[\'"].*?>(?P<text>.*?)</a>')
-    res = href_re.findall(html)
-    if not res:
-        return links
+    soup = BeautifulSoup(html, html_parser)
 
-    for r in res:
-        link_url = make_full_url(r[0], url)
-        link_data = {'url': link_url, 'text': r[1]}
-        links.append(link_data)
+    for a_tag in soup.find_all('a'):
+        links.append({
+            'url': make_full_url(a_tag.get('href'), url),
+            'text': a_tag.get_text(),
+            'alt': a_tag.get('alt'),
+            'rel': a_tag.get('rel'),
+            })
 
     return links
 
@@ -270,7 +270,7 @@ INSERT INTO `crawl_urls` VALUES (
         db.rollback()
         raise
 
-    return db.insert_id()
+    return cur.lastrowid
 
 
 def is_internal_url(url, source_url):
@@ -282,9 +282,6 @@ def is_internal_url(url, source_url):
             or (len(base_url) > len(base_source_url) and base_source_url == base_url[-len(base_source_url):])
             or (len(base_source_url) > len(base_url) and base_url == base_source_url[-len(base_url):])
             )
-        # print url, base_url, base_source_url
-        # link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
-        # return True if link_re.match(url) else False
     else:
         return True
 
@@ -298,7 +295,27 @@ def make_full_url(url, source_url):
 
 
 def associate_link(db, from_id, to_id, run_id, text, alt, rel):
-    pass
+    cur = db.cursor()
+
+    association = '''
+INSERT INTO `crawl_links` VALUES(0, %s, null, %s, %s, %s, %s, %s)
+    '''
+
+    try:
+        cur.execute(association, (
+            run_id,
+            from_id,
+            to_id,
+            text,
+            alt,
+            rel,
+            ))
+        db.commit()
+    except:
+        db.rollback()
+        raise
+
+    return db.insert_id()
 
 def _get_base_url(url):
     res = urlparse(url)
