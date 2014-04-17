@@ -29,29 +29,29 @@ def build_report(db, run_id):
 
     # 500 errors
     # TODO add other error codes
-    c.execute('''SELECT address FROM crawl_urls
-        WHERE run_id = %s AND external = 0 AND (status_code = 500 or status_code = 0)
-        ORDER BY timestamp ASC''', [run_id])
+    c.execute('''SELECT address, status_code FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND (status_code LIKE %s OR status_code = 0)
+        ORDER BY timestamp ASC''', (run_id, '5%',))
     results = c.fetchall()
     output.append({
-        'name': '500 errors',
+        'name': '5xx or 0 status codes',
         'values': [result[0] for result in results],
         })
 
     # 404s
-    c.execute('''SELECT address FROM crawl_urls
-        WHERE run_id = %s AND external = 0 AND status_code = 404
-        ORDER BY timestamp ASC''', [run_id])
+    c.execute('''SELECT address, status_code FROM crawl_urls
+        WHERE run_id = %s AND external = 0 AND status_code LIKE %s
+        ORDER BY timestamp ASC''', (run_id, '4%',))
     results = c.fetchall()
     output.append({
-        'name': '404s',
+        'name': '4xx status codes',
         'values': [result[0] for result in results],
         })
 
     # missing canonicals
     c.execute('''SELECT address FROM crawl_urls
         WHERE run_id = %s AND external = 0 AND canonical IS NULL
-        ORDER BY timestamp ASC''', [run_id])
+        ORDER BY timestamp ASC''', (run_id,))
     results = c.fetchall()
     output.append({
         'name': 'missing canonical',
@@ -61,7 +61,7 @@ def build_report(db, run_id):
     # missing titles
     c.execute('''SELECT address FROM crawl_urls
         WHERE run_id = %s AND external = 0 AND title_1 IS NULL
-        ORDER BY timestamp ASC''', [run_id])
+        ORDER BY timestamp ASC''', (run_id,))
     results = c.fetchall()
     output.append({
         'name': 'missing title',
@@ -71,7 +71,7 @@ def build_report(db, run_id):
     # missing meta descriptions
     c.execute('''SELECT address FROM crawl_urls
         WHERE run_id = %s AND external = 0 AND meta_description_1 IS NULL
-        ORDER BY timestamp ASC''', [run_id])
+        ORDER BY timestamp ASC''', (run_id,))
     results = c.fetchall()
     output.append({
         'name': 'missing meta_description',
@@ -79,23 +79,23 @@ def build_report(db, run_id):
         })
 
     # lint level critical
-    c.execute('''SELECT address FROM crawl_urls
+    c.execute('''SELECT address, lint_critical FROM crawl_urls
         WHERE run_id = %s AND external = 0 AND lint_critical > 0
-        ORDER BY timestamp ASC''', [run_id])
+        ORDER BY timestamp ASC''', (run_id,))
     results = c.fetchall()
     output.append({
         'name': 'lint level critical',
-        'values': [result[0] for result in results],
+        'values': [result[0] + ', ' + result[1] for result in results],
         })
 
     # lint level error
-    c.execute('''SELECT address FROM crawl_urls
+    c.execute('''SELECT address, lint_error FROM crawl_urls
         WHERE run_id = %s AND external = 0 AND lint_error > 0
-        ORDER BY timestamp ASC''', [run_id])
+        ORDER BY timestamp ASC''', (run_id,))
     results = c.fetchall()
     output.append({
         'name': 'lint level error',
-        'values': [result[0] for result in results],
+        'values': [result[0] + ', ' + result[1] for result in results],
         })
 
     return output
