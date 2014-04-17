@@ -89,7 +89,7 @@ def retrieve_url(url, user_agent=None, full=True):
             'url_length': len(response.url),
             'content': response.text,
             'content_type': response.headers.get('content-type'),
-            'code': response.status_code,
+            'code': int(response.status_code),
             'reason': response.reason,
             'size': len(response.text),
             'encoding': response.encoding,
