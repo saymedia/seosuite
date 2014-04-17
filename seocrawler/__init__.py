@@ -117,7 +117,7 @@ def retrieve_url(url, user_agent=None, full=True):
             'url': url,
             'url_length': len(url),
             'code': 0,
-            'reason': 'Timeout ' + TIMEOUT
+            'reason': 'Timeout %s' % TIMEOUT
             }
     except Exception, e:
         print e
