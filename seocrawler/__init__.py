@@ -83,7 +83,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
 def retrieve_url(url, user_agent=None, full=True):
 
-    def _build_payload(response):
+    def _build_payload(response, request_time):
         return {
             'url': response.url,
             'url_length': len(response.url),
@@ -93,6 +93,7 @@ def retrieve_url(url, user_agent=None, full=True):
             'reason': response.reason,
             'size': len(response.text),
             'encoding': response.encoding,
+            'response_time': request_time,
         }
 
     headers = {}
@@ -104,6 +105,7 @@ def retrieve_url(url, user_agent=None, full=True):
             pass
 
     try:
+        start = time.time()
         if full:
             res = requests.get(url, headers=headers, timeout=TIMEOUT)
         else:
@@ -122,9 +124,11 @@ def retrieve_url(url, user_agent=None, full=True):
     except Exception, e:
         print e
         raise
+    finally:
+        request_time = time.time() - start        
         # TODO: Properly handle the failure. reraise?
 
-    return [_build_payload(res),] + redirects
+    return [_build_payload(res, request_time),] + redirects
 
 
 def process_html(html, url):
@@ -234,7 +238,7 @@ INSERT INTO `crawl_urls` VALUES (
             len(url),                                           # address_length
             stats.get('encoding'),                              # encoding
             stats.get('content_type'),                          # content_type
-            0,                                                  # response_time
+            stats.get('response_time'),                         # response_time
             None,                                               # redirect_uri
             page_details.get('canonical'),                      # canonical
 
