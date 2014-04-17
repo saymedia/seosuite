@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `crawl_links`;
 CREATE TABLE `crawl_links` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `run_id` varchar(36) NOT NULL DEFAULT '',
@@ -16,12 +17,12 @@ CREATE TABLE `crawl_links` (
   KEY `to_id` (`to_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `crawl_urls`;
 CREATE TABLE `crawl_urls` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `run_id` varchar(36) NOT NULL DEFAULT '',
   `level` tinyint(4) unsigned NOT NULL DEFAULT '0',
-  `request_hash` varchar(32) DEFAULT NULL,
-  `content_hash` varchar(32) DEFAULT NULL,
+  `content_hash` varchar(64) DEFAULT NULL,
 
   # request data
   `address` varchar(2048) NOT NULL DEFAULT '',
@@ -30,7 +31,7 @@ CREATE TABLE `crawl_urls` (
   `external` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `status_code` tinyint(4) unsigned DEFAULT NULL,
   `status` varchar(32) DEFAULT NULL,
-  `body` blob,
+  `body` longblob,
   `size` int(10) unsigned DEFAULT NULL,
   `address_length` int(10) unsigned NOT NULL,
   `encoding` varchar(16) NOT NULL DEFAULT '',
@@ -54,11 +55,6 @@ CREATE TABLE `crawl_urls` (
   `meta_robots` varchar(16) DEFAULT NULL,
   `rel_next` varchar(2048) DEFAULT NULL,
   `rel_prev` varchar(2048) DEFAULT NULL,
-
-  # link data
-  # `inlinks` int(10) unsigned DEFAULT NULL,
-  # `outlinks` int(10) unsigned DEFAULT NULL,
-  # `external_outlinks` int(10) unsigned DEFAULT NULL,
 
   # lint data
   `lint_critical` int(10) unsigned DEFAULT NULL,

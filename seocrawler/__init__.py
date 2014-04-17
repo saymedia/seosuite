@@ -29,15 +29,15 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
         for res in results:
 
-            lint_errors = []
-            page_details = []
+            lint_errors = {}
+            page_details = {}
 
             if res['code'] == 200:
 
                 lint_errors, page_details, links, sources = process_html(res['content'], res['url'])
 
                 record = store_results(db, run_id, res, lint_errors, page_details)
-                processed_urls[url] = record.id
+                processed_urls[url] = record
                 url_associations[url] = {}
 
                 if links and len(links) > 0:
@@ -51,18 +51,18 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
                                 for link_result in link_results:
                                     if link_result['code'] not in (301, 302):
-                                        link_store = store_results(db, run_id, link_result, [], [])
-                                        processed_urls[link_result['url']] = link_store.id
+                                        link_store = store_results(db, run_id, link_result, {}, {}, True)
+                                        processed_urls[link_result['url']] = link_store
 
                                 # Associate links
-                                associate_link(db, record.id, link_store.id, run_id, link.get('text'), link.get('alt'), link.get('rel'))
+                                associate_link(db, record, link_store, run_id, link.get('text'), link.get('alt'), link.get('rel'))
 
-                        elif link_url not in processed_urls and link_url not in urls:
+                        elif internal and link_url not in processed_urls and link_url not in urls:
                             urls.append(link_url)
                             url_associations[url][link_url] = link
             else:
-                record = store_results(db, run_id, res, lint_errors, page_details)
-                processed_urls[url] = record.id
+                record = store_results(db, run_id, res, lint_errors, page_details, False)
+                processed_urls[url] = record
 
         time.sleep( delay / 1000.0 )
 
@@ -118,31 +118,26 @@ def process_html(html, url):
 
     page_details = extract_page_details(html, url)
 
-    internal_urls, external_urls = extract_links(html, url)
+    links = extract_links(html, url)
 
     sources = extract_sources(html)
 
-    return lint_errors, page_details, internal_urls + external_urls, sources
+    return lint_errors, page_details, links, sources
 
 
 def extract_links(html, url):
-    internal = []
-    external = []
+    links = []
     href_re = re.compile(r'<a.*?href=[\'"](?P<link>.*?)[\'"].*?>(?P<text>.*?)</a>')
     res = href_re.findall(html)
     if not res:
-        return internal, external
+        return links
 
     for r in res:
         link_url = make_full_url(r[0], url)
         link_data = {'url': link_url, 'text': r[1]}
-        # print link_url
-        if is_internal_url(link_url):
-            internal.append(link_data)
-        else:
-            external.append(link_data)
+        links.append(link_data)
 
-    return internal, external
+    return links
 
 
 def extract_sources(html):
@@ -153,30 +148,76 @@ def extract_page_details(html, url):
     return {}
 
 
-def store_results(db, run_id, stats, lint_errors, page_details):
+def store_results(db, run_id, stats, lint_errors, page_details, external=False):
     cur = db.cursor()
 
     insert = '''
-INSERT INTO crawl_urls VALUES (0,
-    %s, 0, %s, %s,
-    %s, %s, %s, %s, %s, %s, COMPRESS(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s,
+INSERT INTO `crawl_urls` VALUES (
+    0, %s, 0, %s,
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
     %s, %s, %s, %s, %s)
     '''
 
     try:
+        url = stats.get('url')
+        content = stats.get('content', '')
+        content_hash = hashlib.sha256(content.encode('ascii', 'ignore')).hexdigest()
+        print content_hash, len(content_hash), len(content)
         cur.execute(insert, (
             run_id,
+            content_hash,                                       # content_hash
             
+            # request data
+            stats.get('url'),                                   # address
+            _get_base_url(url),                                 # domain
+            _get_path(url),                                     # path
+            1 if external else 0,                               # external
+            stats.get('code'),                                  # status_code
+            stats.get('reason'),                                # status
+            stats.get('content', ''),                           # body
+            stats.get('size'),                                  # size
+            len(url),                                           # address_length
+            stats.get('encoding'),                              # encoding
+            stats.get('content_type'),                          # content_type
+            0,                                                  # response_time
+            None,                                               # redirect_uri
+            page_details.get('canonical'),                      # canonical
+
+            # parse data
+            page_details.get('title_1'),                        # title_1
+            page_details.get('title_length_1'),                 # title_length_1
+            page_details.get('title_occurences_1'),             # title_occurences_1
+            page_details.get('meta_description_1'),             # meta_description
+            page_details.get('meta_description_length_1'),      # meta_description_length_1
+            page_details.get('meta_description_occurrences_1'), # meta_description_occurrences_1
+            page_details.get('h1_1'),                           # h1_1
+            page_details.get('h1_length_1'),                    # h1_length_1
+            page_details.get('h1_2'),                           # h1_2
+            page_details.get('h1_length_2'),                    # h1_length_2
+            page_details.get('h1_count'),                       # h1_count
+            page_details.get('meta_robots'),                    # meta_robots
+            page_details.get('rel_next'),                       # rel_next
+            page_details.get('rel_prev'),                       # rel_prev
+
+            # lint data
+            len(lint_errors.get('critical', [])),               # lint_critical
+            len(lint_errors.get('error', [])),                  # lint_error
+            len(lint_errors.get('warn', [])),                   # lint_warn
+            len(lint_errors.get('info', [])),                   # lint_info
+            ''                                                  # lint_results
             ))
         db.commit()
     except:
         db.rollback()
+        raise
+
+    return db.insert_id()
 
 
-def is_internal_url(url):
+def is_internal_url(url, source_url):
     if is_full_url(url):
-        base_url = _get_base_url(url)
+        base_url = _get_base_url(source_url)
         link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
         return True if link_re.match(url) else False
     else:
@@ -191,9 +232,14 @@ def make_full_url(url, source_url):
     return urljoin(source_url, url)
 
 
-def associate_link(db, from_id, to_id, text, alt, rel):
+def associate_link(db, from_id, to_id, run_id, text, alt, rel):
     pass
 
 def _get_base_url(url):
     res = urlparse(url)
     return res.hostname
+
+def _get_path(url):
+    base = _get_base_url(url)
+    parts = url.split(base)
+    return parts[-1]
