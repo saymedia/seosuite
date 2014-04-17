@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>SEO Dashboard</title>
+
+
+    <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+    <style>
+        .True { background-color: green; }
+        .False { background-color: red; }
+        table { border-collapse:collapse; }
+        table, th, td { border-bottom: 1px solid black; padding: 2px; }
+    </style>
+</head>
+<body>
+    <table id="navigation">
+        <thead>
+            <th>id</th>
+            <th>domain</th>
+            <th>path</th>
+            <th>status code</th>
+            <th colspan="4">links</th>
+            <th>title</th>
+            <th>canonical</th>
+            <th>description</th>
+            <th>h1</th>
+            <th>next</th>
+            <th>prev</th>
+            <th>size</th>
+            <th>link count</th>
+        </thead>
+        {% for url in crawl_urls %}
+            <tr>
+                <td>{{ url.id }}</td>
+                <td>{{ url.domain }}</td>
+                <td>{{ url.path }}</td>
+                <td>{{ url.status_code }}</td>
+                <td><a href=\"{{ url.bot_url }}\">bot</a></td>
+                <td><a href=\"{{ url.local_url }}\">local</a></td>
+                <td><a href=\"{{ url.origin_url }}\">origin</a></td>
+                <td><a href=\"{{ url.live_url }}\">live</a></td>
+                <td class="{{ url.id }}">{{ url.title_1 }}</td>
+                <td class="{{ url.id }}">{{ url.canonical }}</td>
+                <td class="{{ url.id }}">{{ url.meta_description_1 }}</td>
+                <td class="{{ url.id }}">{{ url.h1_1 }}</td>
+                <td class="{{ url.id }}">{{ url.rel_next }}</td>
+                <td class="{{ url.id }}">{{ url.rel_prev }}</td>
+                <td class="{{ url.id }}">{{ url.size }}</td>
+                <td class="{{ url.id }}">{{ url.link_count }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+</body>
+</html>
