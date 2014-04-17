@@ -38,8 +38,6 @@ def run(options):
         cur.execute('SELECT id, address FROM crawl_urls WHERE run_id = %s', (options.run_id,))
         processed_urls = dict([(row[1], row[0]) for row in cur.fetchall()])
 
-        print processed_urls
-
     crawl(urls, db, options.internal, options.delay, options.user_agent, url_associations, run_id, processed_urls)
 
 

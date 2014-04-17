@@ -1,5 +1,6 @@
  # -*- coding: utf-8 -*-
 
+import sys
 import time
 import uuid
 import requests
@@ -28,16 +29,15 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
         cur = db.cursor()
 
         try:
-            print 'Saving run state'
             cur.execute('DELETE FROM crawl_save WHERE run_id = %s', (run_id,))
             cur.execute('INSERT INTO crawl_save VALUES(0, %s, %s, %s)', (
                 run_id,
                 json.dumps(urls),
                 json.dumps(url_associations)))
             db.commit()
+            print 'Crawler job exited. Run id: %s' % run_id
         except Exception, e:
             print e
-            print 'FAILED'
             db.rollback()
             return
 
@@ -48,7 +48,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
         run_count += 1
         url = urls.pop(0)
 
-        print "Processing (%d / %d): %s" % (run_count, len(urls), url)
+        print "\nProcessing (%d / %d): %s" % (run_count, len(urls), url)
         if not is_full_url(url):
             continue
             # raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
@@ -110,10 +110,9 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
                             source_results = retrieve_url(source_url, user_agent, False)
 
                             for source_result in source_results:
-                                if source_result['url'] not in processed_urls:
-                                    source_store = store_results(db, run_id, source_result, {}, {}, is_internal_url(source_result['url'], url))
-                                    processed_urls[source_result['url']] = source_store
-                                    associate_link(db, record, source_store, run_id, 'asset', None, source.get('alt'), None)
+                                source_store = store_results(db, run_id, source_result, {}, {}, is_internal_url(source_result['url'], url))
+                                processed_urls[source_url] = source_store
+                                associate_link(db, record, source_store, run_id, 'asset', None, source.get('alt'), None)
 
                         else:
                             associate_link(db, record, processed_urls[source_url], run_id, 'asset', None, source.get('alt'), None)
@@ -157,6 +156,10 @@ def retrieve_url(url, user_agent=None, full=True):
             pass
 
     try:
+        sys.stdout.write("\033[K")
+        sys.stdout.write(" -> %s\r" % url)
+        sys.stdout.flush()
+
         start = time.time()
         if full:
             res = requests.get(url, headers=headers, timeout=TIMEOUT)
