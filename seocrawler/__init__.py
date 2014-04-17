@@ -7,6 +7,7 @@ import re
 import hashlib
 import json
 from urlparse import urlparse, urljoin
+import atexit
 
 from bs4 import BeautifulSoup
 
@@ -17,11 +18,30 @@ html_parser = "lxml"
 
 TIMEOUT = 16
 
-def crawl(urls, db, internal=False, delay=0, user_agent=None):
+def crawl(urls, db, internal=False, delay=0, user_agent=None,
+    url_associations={}, run_id=None, processed_urls={}):
 
-    processed_urls = {}
-    url_associations = {}
-    run_id = uuid.uuid4()
+    run_id = run_id or uuid.uuid4()
+    print "Starting crawl with run_id: %s" % run_id
+
+    def _save_state(db, run_id, urls, url_associations):
+        cur = db.cursor()
+
+        try:
+            print 'Saving run state'
+            cur.execute('DELETE FROM crawl_save WHERE run_id = %s', (run_id,))
+            cur.execute('INSERT INTO crawl_save VALUES(0, %s, %s, %s)', (
+                run_id,
+                json.dumps(urls),
+                json.dumps(url_associations)))
+            db.commit()
+        except Exception, e:
+            print e
+            print 'FAILED'
+            db.rollback()
+            return
+
+    atexit.register(_save_state, db, run_id, urls, url_associations)
 
     run_count = 0
     while len(urls) > 0:
@@ -30,7 +50,8 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
 
         print "Processing (%d / %d): %s" % (run_count, len(urls), url)
         if not is_full_url(url):
-            raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
+            continue
+            # raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
 
         processed_urls[url] = None
 
@@ -143,7 +164,8 @@ def retrieve_url(url, user_agent=None, full=True):
             res = requests.head(url, headers=headers, timeout=TIMEOUT)
 
         if len(res.history) > 0:
-            redirects = [_build_payload(redirect) for redirect in res.history]
+            request_time = 0
+            redirects = [_build_payload(redirect, request_time) for redirect in res.history]
 
     except requests.exceptions.Timeout, e:
         return [{

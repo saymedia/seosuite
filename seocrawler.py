@@ -1,5 +1,6 @@
 import yaml
 import argparse
+import json
 
 import MySQLdb
 
@@ -16,12 +17,30 @@ def run(options):
         passwd=db_conf.get('pass'), db=db_conf.get('name'))
 
     urls = []
+    url_associations = {}
+    processed_urls = {}
+    run_id = None
     if options.file:
         urls = [url.strip() for url in options.file.readlines()]
     elif options.base_url:
         urls = [options.base_url,]
+    elif options.run_id:
+        cur = db.cursor()
+        cur.execute('SELECT * FROM crawl_save WHERE run_id = %s', (options.run_id,))
+        run = cur.fetchone()
+        if not run:
+            raise Exception('No instance found matching the supplied run_id.')
 
-    crawl(urls, db, options.internal, options.delay, options.user_agent)
+        urls = json.loads(run[2])
+        url_associations = json.loads(run[3])
+        run_id = options.run_id
+
+        cur.execute('SELECT id, address FROM crawl_urls WHERE run_id = %s', (options.run_id,))
+        processed_urls = dict([(row[1], row[0]) for row in cur.fetchall()])
+
+        print processed_urls
+
+    crawl(urls, db, options.internal, options.delay, options.user_agent, url_associations, run_id, processed_urls)
 
 
 if __name__ == "__main__":
@@ -33,6 +52,8 @@ if __name__ == "__main__":
         help='A file containing a list of urls (one url per line) to process.')
     inputs.add_argument('-u', '--base_url', type=str,
         help='A single url to use as a starting point for crawling.')
+    inputs.add_argument('-r', '--run_id', type=str,
+        help='The id from a previous run to resume.')
 
     # Processing options
     parser.add_argument('-i', '--internal', action="store_true",

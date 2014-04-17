@@ -67,3 +67,12 @@ CREATE TABLE `crawl_urls` (
   PRIMARY KEY (`id`),
   KEY `run_id` (`run_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `crawl_save`;
+CREATE TABLE `crawl_save` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `run_id` varchar(36) NOT NULL DEFAULT '',
+  `urls` longblob,
+  `url_associations` longblob,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
