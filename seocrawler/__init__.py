@@ -89,9 +89,10 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None):
                             source_results = retrieve_url(source_url, user_agent, False)
 
                             for source_result in source_results:
-                                source_store = store_results(db, run_id, source_result, {}, {}, is_internal_url(source_result['url'], url))
-                                processed_urls[source_result['url']] = source_store
-                                associate_link(db, record, source_store, run_id, 'asset', None, source.get('alt'), None)
+                                if source_result['url'] not in processed_urls:
+                                    source_store = store_results(db, run_id, source_result, {}, {}, is_internal_url(source_result['url'], url))
+                                    processed_urls[source_result['url']] = source_store
+                                    associate_link(db, record, source_store, run_id, 'asset', None, source.get('alt'), None)
 
                         else:
                             associate_link(db, record, processed_urls[source_url], run_id, 'asset', None, source.get('alt'), None)
