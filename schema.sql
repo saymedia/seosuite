@@ -38,9 +38,9 @@ CREATE TABLE `crawl_urls` (
   `content_type` varchar(64) DEFAULT NULL,
   `response_time` float unsigned DEFAULT NULL,
   `redirect_uri` varchar(2048) DEFAULT NULL,
-  `canonical` varchar(2048) DEFAULT NULL,
 
   # parse data
+  `canonical` varchar(2048) DEFAULT NULL,
   `title_1` varchar(1024) DEFAULT NULL,
   `title_length_1` int(10) unsigned DEFAULT NULL,
   `title_occurences_1` int(10) unsigned DEFAULT NULL,

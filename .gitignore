@@ -3,3 +3,4 @@
 .env/
 env/
 testurls
+config.yaml
