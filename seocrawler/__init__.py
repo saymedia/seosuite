@@ -246,9 +246,16 @@ INSERT INTO `crawl_urls` VALUES (
 
 def is_internal_url(url, source_url):
     if is_full_url(url):
-        base_url = _get_base_url(source_url)
-        link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
-        return True if link_re.match(url) else False
+        base_url = _get_base_url(url)
+        base_source_url = _get_base_url(source_url)
+        return (
+            base_url == base_source_url
+            or (len(base_url) > len(base_source_url) and base_source_url == base_url[-len(base_source_url):])
+            or (len(base_source_url) > len(base_url) and base_url == base_source_url[-len(base_url):])
+            )
+        # print url, base_url, base_source_url
+        # link_re = re.compile(r'^(http(s)?:\/\/%s)?(\/.*)' % re.escape(base_url))
+        # return True if link_re.match(url) else False
     else:
         return True
 
@@ -266,7 +273,7 @@ def associate_link(db, from_id, to_id, run_id, text, alt, rel):
 
 def _get_base_url(url):
     res = urlparse(url)
-    return res.hostname
+    return res.netloc
 
 def _get_path(url):
     base = _get_base_url(url)
