@@ -121,6 +121,13 @@ def retrieve_url(url, user_agent=None, full=True):
             'code': 0,
             'reason': 'Timeout %s' % TIMEOUT
             }
+    except requests.exceptions.ConnectionError, e:
+        return {
+            'url': url,
+            'url_length': len(url),
+            'code': 0,
+            'reason': 'Connection Error %s' % e
+            }
     except Exception, e:
         print e
         raise
