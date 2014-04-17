@@ -29,7 +29,7 @@ CREATE TABLE `crawl_urls` (
   `domain` varchar(128) DEFAULT NULL,
   `path` varchar(2048) NOT NULL DEFAULT '',
   `external` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `status_code` tinyint(4) unsigned DEFAULT NULL,
+  `status_code` int(10) unsigned DEFAULT NULL,
   `status` varchar(32) DEFAULT NULL,
   `body` longblob,
   `size` int(10) unsigned DEFAULT NULL,

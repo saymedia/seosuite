@@ -155,6 +155,8 @@ def extract_page_details(html, url):
         return {}
 
     robots = soup.find('head').find('meta', attrs={"name":"robots"})
+    rel_next = soup.find('head').find('link', attrs={'rel':'next'})
+    rel_prev = soup.find('head').find('link', attrs={'rel':'prev'})
     title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
 
     return {
@@ -170,8 +172,8 @@ def extract_page_details(html, url):
         'h1_length_2': len(soup.find_all('h1')[1].get_text()),
         'h1_count': len(soup.find_all('h1')),
         'meta_robots': robots.get("content") if robots else None,
-        'rel_next': soup.find('head').find('link', attrs={"rel":"next"}).get("href"),
-        'rel_prev': soup.find('head').find('link', attrs={"rel":"prev"}).get("href"),
+        'rel_next': rel_next.get("href") if rel_next else None,
+        'rel_prev': rel_prev.get('href') if rel_prev else None,
     }
 
 
@@ -190,7 +192,7 @@ INSERT INTO `crawl_urls` VALUES (
         url = stats.get('url')
         content = stats.get('content', '')
         content_hash = hashlib.sha256(content.encode('ascii', 'ignore')).hexdigest()
-        print content_hash, len(content_hash), len(content)
+        print stats.get('code')
         cur.execute(insert, (
             run_id,
             content_hash,                                       # content_hash
