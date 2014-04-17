@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Usage:
+# python seodashboard/main.py
+
 import yaml
 
 import MySQLdb

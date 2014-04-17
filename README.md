@@ -1,7 +1,16 @@
+SEO Suite
+=========
+
+- **SEO Crawler** crawls a site and saves the results to the db.
+- **SEO Linter** checks HTML againts common SEO rules.
+- **SEO Reporter** outputs the crawl reports in various formats.
+- **SEO Dashboard** displays the crawl data for the browser.
+
+
 SEO Crawler
 ===========
 
-SEO Crawler takes a given url and continues to crawl the internal links on the site until it can't find new urls to crawl. The crawler saves common request information like status code and content type. It also runs the SEO Linter to check for common SEO issues. The results of a crawl are saved to a database for later investigation. The idea is to catch basic, common errors across a whole site and allow for investigation into edge cases.
+SEO Crawler takes a given url and continues to crawl the internal links on the site until it can't find new urls to crawl. The crawler saves common request information like status code and content type. It also runs the SEO Linter to check for common SEO issues. The results of a crawl are saved to a database for later investigation and a JUnit report is saved to the file system. The idea is to catch basic, common errors across a whole site and allow for investigation into edge cases.
 
 Instructions
 ------------
@@ -47,6 +56,33 @@ Lint Rules
 - I21: has robots=noindex (INFO)
 - C22: has head (CRITICAL)
 - W23: h1 count > 1 (WARN)
+
+
+SEO Reporter
+============
+
+The SEO Reporter takes a run_id, gets report data, then outputs it in a given format. The main use-case is running reports in Jenkins with JUnit. By default, it outputs the latest run as junit.
+
+Instructions
+------------
+
+    > pip install -r requirements.txt
+    # python seoreporter/__init__.py [type] [format] [run_id]
+    > python seoreporter/__init__.py build junit d09b8571-5c8a-42ff-8ab7-c38f4f8871c4
+
+
+SEO Dashboard
+=============
+
+The SEO Dashboard presents a table of crawl data as a table viewable in the browser.
+
+Instructions
+------------
+
+    > pip install -r requirements.txt
+    > python seodashboard/main.py
+    > open localhost:5000
+
 
 MIT License
 ===========
