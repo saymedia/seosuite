@@ -30,7 +30,7 @@ CREATE TABLE `crawl_urls` (
   `path` varchar(2048) DEFAULT NULL,
   `external` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `status_code` int(10) unsigned DEFAULT NULL,
-  `status` varchar(512) DEFAULT NULL,
+  `status` text,
   `body` longblob,
   `size` int(10) unsigned DEFAULT NULL,
   `address_length` int(10) unsigned NOT NULL,
