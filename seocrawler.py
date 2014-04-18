@@ -1,5 +1,5 @@
 import yaml
-import argparse
+import optparse
 import json
 import os
 
@@ -10,9 +10,10 @@ from seoreporter import report
 
 
 def run(options):
-
+    print options
     if options.database:
-        env = yaml.load(options.database)
+        with open(options.database, 'r') as f:
+            env = yaml.load(f)
         db_conf = env.get('db', {})
     else:
         db_conf = {
@@ -31,12 +32,14 @@ def run(options):
     processed_urls = {}
     run_id = None
     if options.file:
-        urls = [url.strip() for url in options.file.readlines()]
+        with open(options.file, 'r') as f:
+            urls = [url.strip() for url in f.readlines()]
     elif options.base_url:
         urls = [options.base_url,]
     elif options.yaml:
-        url_yaml = yaml.load(options.yaml)
-        urls = url_yaml.get('seocrawlerurls', [])
+        with open(options.yaml, 'r') as f:
+            url_yaml = yaml.load(f)
+            urls = url_yaml.get('seocrawlerurls', [])
     elif options.run_id:
         cur = db.cursor()
         cur.execute('SELECT * FROM crawl_save WHERE run_id = %s',
@@ -57,38 +60,41 @@ def run(options):
         options.user_agent, url_associations, run_id, processed_urls)
 
     if options.output:
-        options.output.write(report(db, 'build', 'junit', run_id))
+        with open(options.output, 'w') as f:
+            f.write(report(db, 'build', 'junit', run_id))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Crawl the given url(s) and check them for SEO or navigation problems.')
+    parser = optparse.OptionParser(description='Crawl the given url(s) and check them for SEO or navigation problems.')
 
     # Input sources
-    inputs = parser.add_mutually_exclusive_group()
-    inputs.add_argument('-f', '--file', type=file,
+    inputs = optparse.OptionGroup(parser, "Input Options")
+
+    inputs.add_option('-f', '--file', type="string",
         help='A file containing a list of urls (one url per line) to process.')
-    inputs.add_argument('-u', '--base_url', type=str,
+    inputs.add_option('-u', '--base_url', type="string",
         help='A single url to use as a starting point for crawling.')
-    inputs.add_argument('-r', '--run_id', type=str,
+    inputs.add_option('-r', '--run_id', type="string",
         help='The id from a previous run to resume.')
-    inputs.add_argument('-y', '--yaml', type=file,
+    inputs.add_option('-y', '--yaml', type="string",
         help='A yaml file containing a list of urls to process. The yaml file should have a section labeled "seocrawlerurls" that contains a list of the urls to crawl.')
+    parser.add_option_group(inputs)
 
     # Processing options
-    parser.add_argument('-i', '--internal', action="store_true",
+    parser.add_option('-i', '--internal', action="store_true",
         help='Crawl any internal link urls that are found in the content of the page.')
-    parser.add_argument('--user-agent', type=str, default='Twitterbot/1.0 (SEO Crawler)',
+    parser.add_option('--user-agent', type="string", default='Twitterbot/1.0 (SEO Crawler)',
         help='The user-agent string to request pages with.')
-    parser.add_argument('--delay', type=int, default=0,
+    parser.add_option('--delay', type="int", default=0,
         help='The number of milliseconds to delay between each request.')
 
-    parser.add_argument('--database', type=file,
+    parser.add_option('--database', type="string",
         help='A yaml configuration file with the database configuration properties.')
 
 
-    parser.add_argument('-o', '--output', type=argparse.FileType('w'),
+    parser.add_option('-o', '--output', type="string",
         help='The path of the file where the output junix xml will be written to.')
 
-    args = parser.parse_args()
+    args = parser.parse_args()[0]
 
     run(args)

@@ -8,7 +8,7 @@ import yaml
 import MySQLdb
 
 from flask import Flask, render_template, request
-app = Flask(__name__, template_folder='.')
+app = Flask(__name__, template_folder='.', static_folder='static', static_url_path='/static')
 db = None
 
 default_page_length = 50
@@ -93,7 +93,6 @@ def cols_to_props(results):
             'timestamp': result[37],
             })
     return output
-
 
 @app.route("/")
 def hello():
