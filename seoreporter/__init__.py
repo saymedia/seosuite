@@ -85,7 +85,7 @@ def build_report(db, run_id):
     results = c.fetchall()
     output.append({
         'name': 'lint level critical',
-        'values': [result[0] + ', ' + result[1] for result in results],
+        'values': [result[0] + ', ' + str(result[1]) for result in results],
         })
 
     # lint level error
@@ -95,7 +95,7 @@ def build_report(db, run_id):
     results = c.fetchall()
     output.append({
         'name': 'lint level error',
-        'values': [result[0] + ', ' + result[1] for result in results],
+        'values': [result[0] + ', ' + str(result[1]) for result in results],
         })
 
     return output
