@@ -292,8 +292,12 @@ def store_results(db, run_id, stats, lint_errors, page_details, external=False, 
     cur = db.cursor()
 
     insert = '''
-INSERT INTO `crawl_urls` VALUES (
-    0, %s, 0, %s,
+INSERT INTO `crawl_urls` (
+  `run_id`, `level`, `content_hash`, 
+  `address`, `domain`, `path`, `external`, `status_code`, `status`, `body`, `size`, `address_length`, `encoding`, `content_type`, `response_time`, `redirect_uri`, `canonical`,
+  `title_1`, `title_length_1`, `title_occurences_1`, `meta_description_1`, `meta_description_length_1`, `meta_description_occurrences_1`, `h1_1`, `h1_length_1`, `h1_2`, `h1_length_2`, `h1_count`, `meta_robots`, `rel_next`, `rel_prev`,
+  `lint_critical`, `lint_error`, `lint_warn`, `lint_info`, `lint_results`, `timestamp`) VALUES (
+    %s, 0, %s,
     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
     %s, %s, %s, %s, %s, NOW())
@@ -381,7 +385,9 @@ def associate_link(db, from_id, to_id, run_id, link_type, text, alt, rel):
     cur = db.cursor()
 
     association = '''
-INSERT INTO `crawl_links` VALUES(0, %s, %s, %s, %s, %s, %s, %s)
+INSERT INTO `crawl_links` (
+  `run_id`, `type`, `from_id`, `to_id`, `link_text`, `alt_text`, `rel`)
+ VALUES (%s, %s, %s, %s, %s, %s, %s)
     '''
 
     try:
