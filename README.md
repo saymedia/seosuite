@@ -1,5 +1,7 @@
-SEO Suite
-=========
+Recluse - SEO Crawl Suite
+=========================
+
+Recluse is a suite of SEO tools for discovering and investigating common SEO issues across a domain.
 
 - **SEO Crawler** crawls a site and saves the results to the db.
 - **SEO Linter** checks HTML againts common SEO rules.
