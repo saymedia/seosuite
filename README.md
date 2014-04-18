@@ -4,7 +4,7 @@ Recluse - SEO Crawl Suite
 Recluse is a suite of SEO tools for discovering and investigating common SEO issues across a domain.
 
 - **SEO Crawler** crawls a site and saves the results to the db.
-- **SEO Linter** checks HTML againts common SEO rules.
+- **SEO Linter** checks HTML against common SEO rules.
 - **SEO Reporter** outputs the crawl reports in various formats.
 - **SEO Dashboard** displays the crawl data for the browser.
 
