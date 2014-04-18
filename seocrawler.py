@@ -13,7 +13,6 @@ from seoreporter import report
 
 
 def run(options):
-    print options
     if options.database:
         with open(options.database, 'r') as f:
             env = yaml.load(f)
