@@ -80,7 +80,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
                             bad_link = store_results(db, run_id, {
                                 'url': link_url,
                                 'code': 0,
-                                }, {}, {}, None, False)
+                                }, {}, {}, None)
                             processed_urls[link_url] = bad_link
                             associate_link(db, record, bad_link, run_id, 'anchor', link.get('text'), link.get('alt'), link.get('rel'))
                         elif not is_internal_url(link_url, url):
@@ -110,7 +110,8 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
                             source_results = retrieve_url(source_url, user_agent, False)
 
                             for source_result in source_results:
-                                source_store = store_results(db, run_id, source_result, {}, {}, is_internal_url(source_result['url'], url))
+                                internal = is_internal_url(source_result['url'], url)
+                                source_store = store_results(db, run_id, source_result, {}, {}, not internal)
                                 processed_urls[source_url] = source_store
                                 associate_link(db, record, source_store, run_id, 'asset', None, source.get('alt'), None)
 
@@ -127,7 +128,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
     for url, associations in url_associations.iteritems():
         for association, link in associations.iteritems():
             if association in processed_urls:
-                associate_link(db, processed_urls[url], processed_urls[association], run_id, link.get('text'), link.get('alt'), link.get('rel'))
+                associate_link(db, processed_urls[url], processed_urls[association], run_id, 'anchor', link.get('text'), link.get('alt'), link.get('rel'))
 
     return run_id
 

@@ -36,7 +36,7 @@ def run(options):
         urls = [options.base_url,]
     elif options.yaml:
         url_yaml = yaml.load(options.yaml)
-        urls = url_yaml.get('seocrawlerurls')
+        urls = url_yaml.get('seocrawlerurls', [])
     elif options.run_id:
         cur = db.cursor()
         cur.execute('SELECT * FROM crawl_save WHERE run_id = %s',

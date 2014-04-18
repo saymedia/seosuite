@@ -27,7 +27,7 @@ def fetch_latest_run_id():
 def fetch_run(run_id, page=1, page_length=default_page_length):
     c = db.cursor()
     start = (page - 1) * page_length
-    c.execute('SELECT * FROM crawl_urls WHERE run_id = %s ORDER BY timestamp ASC LIMIT %s, %s',
+    c.execute('SELECT * FROM crawl_urls WHERE run_id = %s AND external = 0 ORDER BY timestamp ASC LIMIT %s, %s',
         [run_id, start, page_length])
     return c.fetchall()
 
