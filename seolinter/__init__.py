@@ -1,4 +1,4 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # usage:
 # > curl --silent http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
