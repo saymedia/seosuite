@@ -30,7 +30,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
 
         try:
             cur.execute('DELETE FROM crawl_save WHERE run_id = %s', (run_id,))
-            cur.execute('INSERT INTO crawl_save VALUES(0, %s, %s, %s)', (
+            cur.execute('INSERT INTO crawl_save (`run_id`, `urls`, `url_associations`) VALUES(%s, %s, %s)', (
                 run_id,
                 json.dumps(urls),
                 json.dumps(url_associations)))
