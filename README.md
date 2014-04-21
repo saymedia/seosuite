@@ -1,5 +1,5 @@
-Recluse - SEO Crawl Suite
-=========================
+SEO Tool Suite
+==============
 
 Recluse is a suite of SEO tools for discovering and investigating common SEO issues across a domain.
 
