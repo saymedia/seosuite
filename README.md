@@ -24,6 +24,39 @@ Instructions
     > ./seocrawler.py http://fashionista.com
 
 
+    > > python seocrawler.py --help
+    > Usage: seocrawler.py [options]
+    >
+    > Crawl the given url(s) and check them for SEO or navigation problems.
+    >
+    > Options:
+    >   -h, --help            show this help message and exit
+    >   -i, --internal        Crawl any internal link urls that are found in the
+    >                         content of the page.
+    >   --user-agent=USER_AGENT
+    >                         The user-agent string to request pages with.
+    >   --delay=DELAY         The number of milliseconds to delay between each
+    >                         request.
+    >   --database=DATABASE   A yaml configuration file with the database
+    >                         configuration properties.
+    >   -o OUTPUT, --output=OUTPUT
+    >                         The path of the file where the output junix xml will
+    >                         be written to.
+    >
+    >   Input Options:
+    >     -f FILE, --file=FILE
+    >                         A file containing a list of urls (one url per line) to
+    >                         process.
+    >     -u BASE_URL, --base_url=BASE_URL
+    >                         A single url to use as a starting point for crawling.
+    >     -r RUN_ID, --run_id=RUN_ID
+    >                         The id from a previous run to resume.
+    >     -y YAML, --yaml=YAML
+    >                         A yaml file containing a list of urls to process. The
+    >                         yaml file should have a section labeled
+    >                         "seocrawlerurls" that contains a list of the urls to
+    >                        crawl.
+
 SEO Linter
 ==========
 
