@@ -124,7 +124,7 @@ Instructions
 MIT License
 ===========
 
-Copyright (c) 2014 Paul Thrasher, Kyle Derkacz, Say Media Ltd
+Copyright (c) 2014 Say Media Ltd
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
