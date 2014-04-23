@@ -77,7 +77,7 @@ def run(options):
 
         entry = gd_upload(
             seoreporter.report(db, options.type, options.format, run_id),
-            'seoreporter - %s - %s' % (options.type, datetime.datetime.today().strftime('dd/mm/yy')),
+            'seoreporter - %s - %s' % (options.type, datetime.datetime.today().strftime('%Y/%m/%d')),
             gd_client,
             options.output
             )

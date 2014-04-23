@@ -258,8 +258,8 @@ def xls_format(report_type, tests, run_id):
       <AllowPNG/>
      </OfficeDocumentSettings>
      <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-      <WindowHeight>6240</WindowHeight>
-      <WindowWidth>10000</WindowWidth>
+      <WindowHeight>8000</WindowHeight>
+      <WindowWidth>15000</WindowWidth>
       <WindowTopX>120</WindowTopX>
       <WindowTopY>140</WindowTopY>
       <ProtectStructure>False</ProtectStructure>
@@ -285,7 +285,7 @@ def xls_format(report_type, tests, run_id):
     for test in tests:
         if test['values'] and len(test['values']) > 0:
             # header
-            output += '\n        <Worksheet ss:Name="%s"><Table ss:ExpandedColumnCount="%s" x:FullColumns="1" x:FullRows="1" ss:DefaultColumnWidth="65" ss:DefaultRowHeight="15">\n' % (test['name'].replace('_', ' ').title(), 2 + len(test['values'][0].keys()))
+            output += '\n        <Worksheet ss:Name="%s"><Table ss:ExpandedColumnCount="%s" x:FullColumns="1" x:FullRows="1" ss:DefaultColumnWidth="150" ss:DefaultRowHeight="15">\n' % (test['name'].replace('_', ' ').title(), 2 + len(test['values'][0].keys()))
             output += xls_row(['Run Id'] + [o.replace('_', ' ').title() for o in test['values'][0].keys()])
             # values
             for row in test['values']:
