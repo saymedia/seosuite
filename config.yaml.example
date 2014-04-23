@@ -3,3 +3,6 @@ db:
   user: seo
   pass: oes
   name: seocrawler
+gdata:
+  user: seo@gmail.com
+  pass: oes

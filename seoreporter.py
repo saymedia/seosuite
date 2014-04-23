@@ -7,9 +7,17 @@
 
 import optparse
 import os
+import datetime
 
 import MySQLdb
 import yaml
+
+import gdata.spreadsheet.service
+import gdata.service
+import gdata.spreadsheet
+import gdata.docs
+import gdata.docs.client
+import gdata.docs.data
 
 import seoreporter
 
@@ -36,6 +44,46 @@ def run(options):
         # get the latest run_id
         run_id = seoreporter.fetch_latest_run_id(db)
 
+    # Optionally upload to google docs
+    gd_client = None
+    if options.upload:
+        def gd_login(email, password):
+            client = gdata.docs.client.DocsClient(source="Recluse SEO Suite")
+            client.api_version = "3"
+            client.ssl = True
+            # pp.pprint(vars(client))
+            client.ClientLogin(email, password, client.source)
+            return client
+
+        def gd_upload(report, title, client, filename='tmp.xls'):
+            with open(filename, 'w') as f:
+                f.write(report)
+            # print vars(gdata.docs)
+            newResource = gdata.docs.data.Resource(filename, title)
+            media = gdata.data.MediaSource()
+            if options.format == 'xls':
+                media.SetFileHandle(filename, 'application/vnd.ms-excel')
+                # media.SetFileHandle(filename, 'application/vnd.google-apps.spreadsheet')
+            elif options.format == 'csv':
+                media.SetFileHandle(filename, 'text/csv')
+            newDocument = client.CreateResource(newResource, create_uri=gdata.docs.client.RESOURCE_UPLOAD_URI, media=media)
+            return newDocument
+
+        with open(options.database, 'r') as f:
+            login = yaml.load(f).get('gdata', {})
+        gd_client = gd_login(login.get('user', None), login.get('pass', None))
+        if not gd_client:
+            raise Exception('Cannot connect to Google Docs.')
+
+        entry = gd_upload(
+            seoreporter.report(db, options.type, options.format, run_id),
+            'seoreporter - %s - %s' % (options.type, datetime.datetime.today().strftime('dd/mm/yy')),
+            gd_client,
+            options.output
+            )
+        print "Uploaded to Google Docs. URL is:"
+        print entry.GetAlternateLink().href
+
     if options.output:
         with open(options.output, 'w') as f:
             f.write(seoreporter.report(db, options.type, options.format, run_id))
@@ -54,6 +102,8 @@ if __name__ == "__main__":
 
     parser.add_option('--database', type="string",
         help='A yaml configuration file with the database configuration properties.')
+    parser.add_option('-u', '--upload', action="store_true", default=False,
+        help='Upload the file to Google Docs.')
 
 
     parser.add_option('-o', '--output', type="string",
