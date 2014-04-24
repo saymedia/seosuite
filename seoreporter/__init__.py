@@ -14,6 +14,7 @@
 import yaml
 import time
 import datetime
+import os
 
 import MySQLdb
 
@@ -30,7 +31,7 @@ def report(db, report_type, report_format, run_id):
     elif report_type == 'status_code':
         report_data = status_code_report(db, run_id)
     elif report_type == 'all':
-        report_data = build_report(db, run_id)
+        report_data = all_report(db, run_id)
     else:
         raise Exception('Report type not supported')
 
@@ -42,6 +43,8 @@ def report(db, report_type, report_format, run_id):
         return xls_format(report_type, report_data, run_id)
     elif report_format == 'sql':
         return sql_format(report_type, report_data, run_id)
+    elif report_format == 'html_files':
+        return html_files_format(report_type, report_data, run_id)
     else:
         raise Exception('Report format not supported')
 
@@ -317,6 +320,28 @@ def csv_format(report_type, tests, run_id):
             for row in test['values']:
                 output += csv_row([run_id, test['name'].replace('_', ' ').title()] + [str(v) for v in row.values()])
     return output
+
+
+def html_files_format(report_type, tests, run_id):
+    def file_row(path, content, folder_name="_seoreporter_html_", ext="html"):
+        path_name = path[:50].replace('http://', '').replace('https://', '').replace('/', '__')
+        file_name = folder_name + "/" + path_name + '.' + ext
+
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+
+        with open(file_name, "w") as text_file:
+            text_file.write(content)
+
+    # print tests
+    for test in tests:
+        if test['values'] and len(test['values']) > 0:
+            for row in test['values']:
+                # print row
+                if row['content_type'] == 'text/html':
+                    file_row(row['address'], row['body'])
+
+    return 'Done.'
 
 
 def sql_format(report_type, tests, run_id):
