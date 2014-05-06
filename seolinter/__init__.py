@@ -68,7 +68,8 @@ def parse_html(html):
 
     robots = soup.find('head').find('meta', attrs={"name":"robots"})
     title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
-    h1 = soup.find('h1') or soup.find_all('h1')[1]
+    h1s = soup.find_all('h1')
+    h1 = soup.find('h1') or h1s[1] if len(h1s) >= 2 else None
     meta_description = soup.find('head').find('meta', attrs={"name":"description"})
 
     return {
@@ -85,7 +86,7 @@ def parse_html(html):
         'h1': h1,
         'h1s': soup.find_all('h1'),
         'h1_count': len(soup.find_all('h1')),
-        'h1_keywords': extract_keywords(h1.get_text()),
+        'h1_keywords': extract_keywords(h1.get_text()) if h1 else [],
         # 'text_only': soup.get_text(),
         'links': soup.find_all('a'),
         'link_count': len(soup.find_all('a')),
