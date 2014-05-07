@@ -69,7 +69,7 @@ def parse_html(html):
     robots = soup.find('head').find('meta', attrs={"name":"robots"})
     title = soup.title.get_text() if soup.title else unicode(soup.find('title'))
     h1s = soup.find_all('h1')
-    h1 = soup.find('h1') or h1s[1] if len(h1s) >= 2 else None
+    h1 = soup.find('h1') or h1s[0] if len(h1s) >= 1 else None
     meta_description = soup.find('head').find('meta', attrs={"name":"description"})
 
     return {
@@ -84,8 +84,8 @@ def parse_html(html):
         'meta_description_keywords':
             extract_keywords(meta_description.get('content')) if meta_description else [],
         'h1': h1,
-        'h1s': soup.find_all('h1'),
-        'h1_count': len(soup.find_all('h1')),
+        'h1s': h1s,
+        'h1_count': len(h1s),
         'h1_keywords': extract_keywords(h1.get_text()) if h1 else [],
         # 'text_only': soup.get_text(),
         'links': soup.find_all('a'),
@@ -153,7 +153,7 @@ def lint(html_string, level=INFO):
         output['E17'] = p['link_count']
 
     if p['size'] >= 200 * 1024:
-        output['E17'] = p['size']
+        output['E18'] = p['size']
 
     if p['robots'] and "nofollow" in p['robots']:
         output['I20'] = p['robots']
