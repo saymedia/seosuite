@@ -113,26 +113,51 @@ Options:
 <a name="lint-rules" class="anchor" href="#lint-rules"><span class="octicon octicon-link"></span></a>Lint Rules</h2>
 
 <ul>
-<li>E02: has title (ERROR)</li>
-<li>W03: title &lt; 58 chars (WARN)</li>
-<li>E05: has meta description (ERROR)</li>
-<li>W06: meta description &lt; 150 chars (WARN)</li>
-<li>E08: has canonical (ERROR)</li>
-<li>E09: has h1 (ERROR)</li>
-<li>I10: missing rel=prev (INFO)</li>
-<li>I11: missing rel=next (INFO)</li>
-<li>E12: title matches &lt;1 h1 word (ERROR)</li>
-<li>E13: title matches &lt;1 meta description word (ERROR)</li>
-<li>W14: title matches &lt;3 h1 words (WARN)</li>
-<li>W15: title matches &lt;3 meta description word (WARN)</li>
-<li>W16: &lt;300 outlinks on page (WARN)</li>
-<li>E17: &lt;1000 outlinks on page (ERROR)</li>
-<li>W18: size &lt; 200K (WARN)</li>
-<li>W19: all img tags have alt attribute (WARN)</li>
-<li>I20: has robots=nofollow (INFO)</li>
-<li>I21: has robots=noindex (INFO)</li>
-<li>C22: has head (CRITICAL)</li>
-<li>W23: h1 count &gt; 1 (WARN)</li>
+<li>
+<strong>Critical Issues</strong>
+
+<ul>
+<li>C22: No <code>&lt;head&gt;</code> section defined on the page</li>
+</ul>
+</li>
+<li>
+<strong>Errors</strong>
+
+<ul>
+<li>E02: The page's <code>&lt;title&gt;</code> is missing</li>
+<li>E05: The page's meta description is missing</li>
+<li>E08: The page's canonical url is missing</li>
+<li>E09: No <code>&lt;h1&gt;</code> tags found on the page</li>
+<li>E12: Fewer than 1 word matches between the page's <code>&lt;title&gt;</code> and the first <code>&lt;h1&gt;</code> on the page</li>
+<li>E13: Fewer than 1 word matches between the page's <code>&lt;title&gt;</code> and the page's meta description</li>
+<li>E17: More than 1000 links were found on the page</li>
+</ul>
+</li>
+<li>
+<strong>Warnings</strong>
+
+<ul>
+<li>W03: The page's <code>&lt;title&gt;</code> was less than 58 characters</li>
+<li>W06: The page's meta description was less than 150 characters</li>
+<li>W14: The page's <code>&lt;title&gt;</code> matches fewer than 3 words with the first <code>&lt;h1&gt;</code>
+</li>
+<li>W15: The page's <code>&lt;title&gt;</code> matches fewer than 3 words with the page's meta description</li>
+<li>W16: More than 300 links were found on page</li>
+<li>W18: size &lt; 200K</li>
+<li>W19: Some of the <code>&lt;img&gt;</code> tags on the page were missing alt text</li>
+<li>W23: More than one <code>&lt;h1&gt;</code> tag was found on the page</li>
+</ul>
+</li>
+<li>
+<strong>Notices</strong>
+
+<ul>
+<li>I10: missing rel=prev</li>
+<li>I11: missing rel=next</li>
+<li>I20: has robots=nofollow</li>
+<li>I21: has robots=noindex</li>
+</ul>
+</li>
 </ul><h1>
 <a name="seo-reporter" class="anchor" href="#seo-reporter"><span class="octicon octicon-link"></span></a>SEO Reporter</h1>
 
