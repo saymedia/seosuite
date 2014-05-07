@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Seosuite by saymedia</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Seosuite</h1>
+          <h2>Automated Search Engine Optimization Testing Tool</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/saymedia/seosuite/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/saymedia/seosuite/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/saymedia/seosuite" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a name="seo-tool-suite" class="anchor" href="#seo-tool-suite"><span class="octicon octicon-link"></span></a>SEO Tool Suite</h1>
+
+<p>Recluse is a suite of SEO tools for discovering and investigating common SEO issues across a domain.</p>
+
+<ul>
+<li>
+<strong>SEO Crawler</strong> crawls a site and saves the results to the db.</li>
+<li>
+<strong>SEO Linter</strong> checks HTML against common SEO rules.</li>
+<li>
+<strong>SEO Reporter</strong> outputs the crawl reports in various formats.</li>
+<li>
+<strong>SEO Dashboard</strong> displays the crawl data for the browser.</li>
+</ul><h1>
+<a name="seo-crawler" class="anchor" href="#seo-crawler"><span class="octicon octicon-link"></span></a>SEO Crawler</h1>
+
+<p>SEO Crawler takes a given url and continues to crawl the internal links on the site until it can't find new urls to crawl. The crawler saves common request information like status code and content type. It also runs the SEO Linter to check for common SEO issues. The results of a crawl are saved to a database for later investigation and a JUnit report is saved to the file system. The idea is to catch basic, common errors across a whole site and allow for investigation into edge cases.</p>
+
+<h2>
+<a name="instructions" class="anchor" href="#instructions"><span class="octicon octicon-link"></span></a>Instructions</h2>
+
+<pre><code>&gt; pip install -r requirements.txt
+&gt; cat schema.sql | mysql -uusername -p
+&gt; cp testurls.example testurls
+&gt; cp config.yaml.example config.yaml
+&gt; ./seocrawler.py http://fashionista.com
+</code></pre>
+
+<h2>
+<a name="cli-options" class="anchor" href="#cli-options"><span class="octicon octicon-link"></span></a>CLI Options</h2>
+
+<pre><code>$&gt; python seocrawler.py --help
+Usage: seocrawler.py [options]
+
+Crawl the given url(s) and check them for SEO or navigation problems.
+
+Options:
+  -h, --help            show this help message and exit
+  -i, --internal        Crawl any internal link urls that are found in the
+                        content of the page.
+  --user-agent=USER_AGENT
+                        The user-agent string to request pages with.
+  --delay=DELAY         The number of milliseconds to delay between each
+                        request.
+  --database=DATABASE   A yaml configuration file with the database
+                        configuration properties.
+  -o OUTPUT, --output=OUTPUT
+                        The path of the file where the output junix xml will
+                        be written to.
+
+  Input Options:
+    -f FILE, --file=FILE
+                        A file containing a list of urls (one url per line) to
+                        process.
+    -u BASE_URL, --base_url=BASE_URL
+                        A single url to use as a starting point for crawling.
+    -r RUN_ID, --run_id=RUN_ID
+                        The id from a previous run to resume.
+    -y YAML, --yaml=YAML
+                        A yaml file containing a list of urls to process. The
+                        yaml file should have a section labeled
+                        "seocrawlerurls" that contains a list of the urls to
+                        crawl.
+</code></pre>
+
+<h1>
+<a name="seo-linter" class="anchor" href="#seo-linter"><span class="octicon octicon-link"></span></a>SEO Linter</h1>
+
+<p>The SEO Linter tests a given string for common SEO rules. The levels (CRITICAL, ERROR, WARN and INFO) are not hard, fast SEO rules but should help in an SEO investigation.</p>
+
+<h2>
+<a name="instructions-1" class="anchor" href="#instructions-1"><span class="octicon octicon-link"></span></a>Instructions</h2>
+
+<pre><code>&gt; pip install -r requirements.txt
+&gt; curl --silent http://fashionista.com?__escaped_fragment__= | python seolinter/__init__.py
+</code></pre>
+
+<h2>
+<a name="lint-rules" class="anchor" href="#lint-rules"><span class="octicon octicon-link"></span></a>Lint Rules</h2>
+
+<ul>
+<li>E02: has title (ERROR)</li>
+<li>W03: title &lt; 58 chars (WARN)</li>
+<li>E05: has meta description (ERROR)</li>
+<li>W06: meta description &lt; 150 chars (WARN)</li>
+<li>E08: has canonical (ERROR)</li>
+<li>E09: has h1 (ERROR)</li>
+<li>I10: missing rel=prev (INFO)</li>
+<li>I11: missing rel=next (INFO)</li>
+<li>E12: title matches &lt;1 h1 word (ERROR)</li>
+<li>E13: title matches &lt;1 meta description word (ERROR)</li>
+<li>W14: title matches &lt;3 h1 words (WARN)</li>
+<li>W15: title matches &lt;3 meta description word (WARN)</li>
+<li>W16: &lt;300 outlinks on page (WARN)</li>
+<li>E17: &lt;1000 outlinks on page (ERROR)</li>
+<li>W18: size &lt; 200K (WARN)</li>
+<li>W19: all img tags have alt attribute (WARN)</li>
+<li>I20: has robots=nofollow (INFO)</li>
+<li>I21: has robots=noindex (INFO)</li>
+<li>C22: has head (CRITICAL)</li>
+<li>W23: h1 count &gt; 1 (WARN)</li>
+</ul><h1>
+<a name="seo-reporter" class="anchor" href="#seo-reporter"><span class="octicon octicon-link"></span></a>SEO Reporter</h1>
+
+<p>The SEO Reporter takes a run_id, gets report data, then outputs it in a given format. The main use-case is running reports in Jenkins with JUnit. By default, it outputs the latest run as junit.</p>
+
+<h2>
+<a name="instructions-2" class="anchor" href="#instructions-2"><span class="octicon octicon-link"></span></a>Instructions</h2>
+
+<pre><code>&gt; pip install -r requirements.txt
+# python seoreporter/__init__.py [type] [format] [run_id]
+&gt; python seoreporter/__init__.py build junit d09b8571-5c8a-42ff-8ab7-c38f4f8871c4
+</code></pre>
+
+<h1>
+<a name="seo-dashboard" class="anchor" href="#seo-dashboard"><span class="octicon octicon-link"></span></a>SEO Dashboard</h1>
+
+<p>The SEO Dashboard presents a table of crawl data as a table viewable in the browser.</p>
+
+<h2>
+<a name="instructions-3" class="anchor" href="#instructions-3"><span class="octicon octicon-link"></span></a>Instructions</h2>
+
+<pre><code>&gt; pip install -r requirements.txt
+&gt; python seodashboard/main.py
+&gt; open localhost:5000
+</code></pre>
+
+<h1>
+<a name="mit-license" class="anchor" href="#mit-license"><span class="octicon octicon-link"></span></a>MIT License</h1>
+
+<p>Copyright (c) 2014 Say Media Ltd</p>
+
+<p>Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.</p>
+        </section>
+
+        <footer>
+          Seosuite is maintained by <a href="https://github.com/saymedia">saymedia</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
