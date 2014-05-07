@@ -89,14 +89,14 @@ Lint Rules
  - W14: The page's `<title>` matches fewer than 3 words with the first `<h1>`
  - W15: The page's `<title>` matches fewer than 3 words with the page's meta description
  - W16: More than 300 links were found on page
- - W18: size < 200K
+ - W18: The size of the page's markup is greater 200K
  - W19: Some of the `<img>` tags on the page were missing alt text
  - W23: More than one `<h1>` tag was found on the page
 - **Notices**
- - I10: missing rel=prev
- - I11: missing rel=next
- - I20: has robots=nofollow
- - I21: has robots=noindex
+ - I10: No `rel=prev` links were found on the page
+ - I11: No `rel=next` links were found on the page
+ - I20: One or more links on the page has `robots = nofollow`
+ - I21: One or more links on the page has `robots = noindex`
 
 
 SEO Reporter
