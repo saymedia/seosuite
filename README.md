@@ -73,26 +73,30 @@ Instructions
 Lint Rules
 ----------
 
-- E02: has title (ERROR)
-- W03: title < 58 chars (WARN)
-- E05: has meta description (ERROR)
-- W06: meta description < 150 chars (WARN)
-- E08: has canonical (ERROR)
-- E09: has h1 (ERROR)
-- I10: missing rel=prev (INFO)
-- I11: missing rel=next (INFO)
-- E12: title matches <1 h1 word (ERROR)
-- E13: title matches <1 meta description word (ERROR)
-- W14: title matches <3 h1 words (WARN)
-- W15: title matches <3 meta description word (WARN)
-- W16: <300 outlinks on page (WARN)
-- E17: <1000 outlinks on page (ERROR)
-- W18: size < 200K (WARN)
-- W19: all img tags have alt attribute (WARN)
-- I20: has robots=nofollow (INFO)
-- I21: has robots=noindex (INFO)
-- C22: has head (CRITICAL)
-- W23: h1 count > 1 (WARN)
+- **Critical Issues**
+ - C22: No `<head>` section defined on the page
+- **Errors**
+ - E02: The page's `<title>` is missing
+ - E05: The page's meta description is missing
+ - E08: The page's canonical url is missing
+ - E09: No `<h1>` tags found on the page
+ - E12: Fewer than 1 word matches between the page's `<title>` and the first `<h1>` on the page
+ - E13: Fewer than 1 word matches between the page's `<title>` and the page's meta description
+ - E17: More than 1000 links were found on the page
+- **Warnings**
+ - W03: The page's `<title>` was less than 58 characters
+ - W06: The page's meta description was less than 150 characters
+ - W14: The page's `<title>` matches fewer than 3 words with the first `<h1>`
+ - W15: The page's `<title>` matches fewer than 3 words with the page's meta description
+ - W16: More than 300 links were found on page
+ - W18: size < 200K
+ - W19: Some of the `<img>` tags on the page were missing alt text
+ - W23: More than one `<h1>` tag was found on the page
+- **Notices**
+ - I10: missing rel=prev
+ - I11: missing rel=next
+ - I20: has robots=nofollow
+ - I21: has robots=noindex
 
 
 SEO Reporter
