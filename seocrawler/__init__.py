@@ -46,10 +46,11 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
     run_count = 0
     while len(urls) > 0:
         run_count += 1
-        url = urls.pop(0)
+        url = urls[0]
 
         print "\nProcessing (%d / %d): %s" % (run_count, len(urls), url)
         if not is_full_url(url):
+            processed_urls[url] = urls.pop(0)
             continue
             # raise ValueError('A relative url as provided: %s. Please ensure that all urls are absolute.' % url)
 
@@ -62,7 +63,7 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
             lint_errors = {}
             page_details = {}
 
-            if res['code'] == 200:
+            if res['code'] == 200 and res['content_type'] == 'text/html':
 
                 lint_errors, page_details, links, sources = process_html(res['content'], res['url'])
 
@@ -123,12 +124,15 @@ def crawl(urls, db, internal=False, delay=0, user_agent=None,
                 processed_urls[url] = record
 
         time.sleep( delay / 1000.0 )
+        urls.pop(0)
 
     # Process associations
     for url, associations in url_associations.iteritems():
         for association, link in associations.iteritems():
-            if association in processed_urls:
-                associate_link(db, processed_urls[url], processed_urls[association], run_id, 'anchor', link.get('text'), link.get('alt'), link.get('rel'))
+            to_id = processed_urls.get(url)
+            from_id = processed_urls.get(association)
+            if to_id and from_id and from_id != to_id:
+                associate_link(db, to_id, from_id, run_id, 'anchor', link.get('text'), link.get('alt'), link.get('rel'))
 
     return run_id
 
@@ -163,10 +167,10 @@ def retrieve_url(url, user_agent=None, full=True):
         sys.stdout.flush()
 
         start = time.time()
-        if full:
+        res = requests.head(url, headers=headers, timeout=TIMEOUT)
+        
+        if full and res.headers.get('content-type') == 'text/html':
             res = requests.get(url, headers=headers, timeout=TIMEOUT)
-        else:
-            res = requests.head(url, headers=headers, timeout=TIMEOUT)
 
         if len(res.history) > 0:
             request_time = 0
@@ -221,7 +225,7 @@ def extract_links(html, url):
             full_url = a_tag.get('href')
             valid = False
 
-        if full_url: # Ignore any a tags that don't have an href
+        if full_url and 'mailto:' not in full_url: # Ignore any a tags that don't have an href
             links.append({
                 'url': full_url,
                 'valid': valid,
@@ -308,6 +312,10 @@ INSERT INTO `crawl_urls` (
         content = stats.get('content', '')
         content_hash = hashlib.sha256(content.encode('ascii', 'ignore')).hexdigest()
         lint_keys = [k.upper() for k in lint_errors.keys()]
+        try:
+            lint_res = json.dumps(lint_errors)
+        except:
+            lint_res = '[]'
         cur.execute(insert, (
             run_id,
             content_hash if content else None,                  # content_hash
@@ -381,12 +389,12 @@ def make_full_url(url, source_url):
     return full.split('#')[0]
 
 
-def associate_link(db, from_id, to_id, run_id, link_type, text, alt, rel):
+def associate_link(db, from_url_id, to_url_id, run_id, link_type, text, alt, rel):
     cur = db.cursor()
 
     association = '''
 INSERT INTO `crawl_links` (
-  `run_id`, `type`, `from_id`, `to_id`, `link_text`, `alt_text`, `rel`)
+  `run_id`, `type`, `from_url_id`, `to_url_id`, `link_text`, `alt_text`, `rel`)
  VALUES (%s, %s, %s, %s, %s, %s, %s)
     '''
 
@@ -394,8 +402,8 @@ INSERT INTO `crawl_links` (
         cur.execute(association, (
             run_id,
             link_type,
-            from_id,
-            to_id,
+            from_url_id,
+            to_url_id,
             text.encode('ascii', 'ignore') if text else None,
             alt.encode('ascii', 'ignore') if alt else None,
             rel,

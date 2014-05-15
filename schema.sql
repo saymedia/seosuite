@@ -5,16 +5,16 @@ CREATE TABLE `crawl_links` (
   `type` varchar(32) DEFAULT NULL, -- 'link' or 'source'
 
   # request data
-  `from_id` int(10) unsigned NOT NULL,
-  `to_id` int(10) unsigned NOT NULL,
+  `from_url_id` int(10) unsigned NOT NULL,
+  `to_url_id` int(10) unsigned NOT NULL,
   `link_text` varchar(1024) DEFAULT NULL,
   `alt_text` varchar(1024) DEFAULT NULL,
   `rel` varchar(1024) DEFAULT NULL,
 
   PRIMARY KEY (`id`),
   KEY `run_id` (`run_id`),
-  KEY `from_id` (`from_id`),
-  KEY `to_id` (`to_id`)
+  KEY `from_url_id` (`from_url_id`),
+  KEY `to_url_id` (`to_url_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `crawl_urls`;
