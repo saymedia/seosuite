@@ -169,7 +169,7 @@ def retrieve_url(url, user_agent=None, full=True):
         start = time.time()
         res = requests.head(url, headers=headers, timeout=TIMEOUT)
         
-        if full and res.headers.get('content-type') == 'text/html':
+        if full and res.headers.get('content-type').split(';')[0] == 'text/html':
             res = requests.get(url, headers=headers, timeout=TIMEOUT)
 
         if len(res.history) > 0:
@@ -247,6 +247,7 @@ def extract_sources(html, url):
         source_url = link.get('src') or link.get('href')
         if not source_url:
             continue
+        source_url = source_url.strip()
         if not is_full_url(source_url):
             full_url = make_full_url(source_url, url)
         else:
