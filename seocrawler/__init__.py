@@ -317,6 +317,7 @@ INSERT INTO `crawl_urls` (
             lint_res = json.dumps(lint_errors)
         except:
             lint_res = '[]'
+        s = int(stats.get('size', 0))
         cur.execute(insert, (
             run_id,
             content_hash if content else None,                  # content_hash
@@ -329,7 +330,7 @@ INSERT INTO `crawl_urls` (
             stats.get('code'),                                  # status_code
             stats.get('reason'),                                # status
             stats.get('content', ''),                           # body
-            stats.get('size'),                                  # size
+            s if s >= 0 else 0,                                 # size
             len(url),                                           # address_length
             stats.get('encoding'),                              # encoding
             stats.get('content_type'),                          # content_type
