@@ -5,6 +5,8 @@ import yaml
 import optparse
 import json
 import os
+import gzip
+import json
 
 import MySQLdb
 
@@ -43,15 +45,22 @@ def run(options):
             url_yaml = yaml.load(f)
             urls = url_yaml.get('seocrawlerurls', [])
     elif options.run_id:
-        cur = db.cursor()
-        cur.execute('SELECT * FROM crawl_save WHERE run_id = %s',
-            (options.run_id,))
-        run = cur.fetchone()
-        if not run:
-            raise Exception('No instance found matching the supplied run_id.')
+        save_file = '/Users/kylederkacz/Projects/Say/seosuite/jobs/%s.gz' % (options.run_id)
+        if not os.path.exists(save_file):
+            raise Exception('Save directory %s was not found' % save_file)
 
-        urls = json.loads(run[2])
-        url_associations = json.loads(run[3])
+        with gzip.open(save_file, 'r') as f:
+            content = f.read()
+            data = json.loads(content)
+
+        if not data:
+            raise Exception('No save data found')
+
+        urls = data.get('urls', [])
+        url_associations = data.get('associations', {})
+
+
+        cur = db.cursor()
         run_id = options.run_id
 
         cur.execute('SELECT id, address FROM crawl_urls WHERE run_id = %s',
@@ -59,7 +68,7 @@ def run(options):
         processed_urls = dict([(row[1], row[0]) for row in cur.fetchall()])
 
     run_id = crawl(urls, db, options.internal, options.delay,
-        options.user_agent, url_associations, run_id, processed_urls)
+        options.user_agent, url_associations, run_id, processed_urls, limit=options.limit)
 
     if options.output:
         with open(options.output, 'w') as f:
@@ -85,6 +94,8 @@ if __name__ == "__main__":
     # Processing options
     parser.add_option('-i', '--internal', action="store_true",
         help='Crawl any internal link urls that are found in the content of the page.')
+    parser.add_option('-l', '--limit', action="store", type="int", default=0,
+        help='The maximum number of internal links that will be followed.')
     parser.add_option('--user-agent', type="string", default='Twitterbot/1.0 (SEO Crawler)',
         help='The user-agent string to request pages with.')
     parser.add_option('--delay', type="int", default=0,
