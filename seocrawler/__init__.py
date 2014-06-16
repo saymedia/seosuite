@@ -409,7 +409,7 @@ def make_full_url(url, source_url):
 
 
 def associate_link(db, from_url_id, to_url_id, run_id, link_type, text, alt, rel):
-    if not from_url_id or not to_url_id or not run_id or type(from_url_id) not 'int' or type(to_url_id) not 'int':
+    if not from_url_id or not to_url_id or not run_id or type(from_url_id) is not 'int' or type(to_url_id) is not 'int':
         print "Failed to save association (From:", from_url_id, "To:", to_url_id, ")"
         return False
 
