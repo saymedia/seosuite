@@ -21,8 +21,7 @@ html_parser = "lxml"
 
 TIMEOUT = 16
 
-JOBS_DIR = '/Users/kylederkacz/Projects/Say/seosuite/jobs'
-
+JOBS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'jobs')
 
 def crawl(urls, db, internal=False, delay=0, user_agent=None,
     url_associations={}, run_id=None, processed_urls={}, limit=0):
@@ -409,7 +408,7 @@ def make_full_url(url, source_url):
 
 
 def associate_link(db, from_url_id, to_url_id, run_id, link_type, text, alt, rel):
-    if not from_url_id or not to_url_id or not run_id or type(from_url_id) is not 'int' or type(to_url_id) is not 'int':
+    if not from_url_id or not to_url_id or not run_id:
         print "Failed to save association (From:", from_url_id, "To:", to_url_id, ")"
         return False
 
