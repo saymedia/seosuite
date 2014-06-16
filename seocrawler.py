@@ -45,7 +45,7 @@ def run(options):
             url_yaml = yaml.load(f)
             urls = url_yaml.get('seocrawlerurls', [])
     elif options.run_id:
-        save_file = '/Users/kylederkacz/Projects/Say/seosuite/jobs/%s.gz' % (options.run_id)
+        save_file = './jobs/%s.gz' % (options.run_id)
         if not os.path.exists(save_file):
             raise Exception('Save directory %s was not found' % save_file)
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         help='Crawl any internal link urls that are found in the content of the page.')
     parser.add_option('-l', '--limit', action="store", type="int", default=0,
         help='The maximum number of internal links that will be followed.')
-    parser.add_option('--user-agent', type="string", default='Twitterbot/1.0 (SEO Crawler)',
+    parser.add_option('--user-agent', type="string", default='Screaming Frog SEO Spider/2.30',
         help='The user-agent string to request pages with.')
     parser.add_option('--delay', type="int", default=0,
         help='The number of milliseconds to delay between each request.')
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
 
     parser.add_option('-o', '--output', type="string",
-        help='The path of the file where the output junix xml will be written to.')
+        help='The path of the file where the output junit xml will be written to.')
 
     args = parser.parse_args()[0]
 
