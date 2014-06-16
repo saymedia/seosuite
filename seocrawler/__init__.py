@@ -184,7 +184,7 @@ def retrieve_url(url, user_agent=None, full=True):
 
         start = time.time()
         res = requests.head(url, headers=headers, timeout=TIMEOUT)
-        
+
         if full and res.headers.get('content-type', '').split(';')[0] == 'text/html':
             res = requests.get(url, headers=headers, timeout=TIMEOUT)
 
@@ -314,7 +314,7 @@ def store_results(db, run_id, stats, lint_errors, page_details, external=False, 
 
     insert = '''
 INSERT INTO `crawl_urls` (
-  `run_id`, `level`, `content_hash`, 
+  `run_id`, `level`, `content_hash`,
   `address`, `domain`, `path`, `external`, `status_code`, `status`, `body`, `size`, `address_length`, `encoding`, `content_type`, `response_time`, `redirect_uri`, `canonical`,
   `title_1`, `title_length_1`, `title_occurences_1`, `meta_description_1`, `meta_description_length_1`, `meta_description_occurrences_1`, `h1_1`, `h1_length_1`, `h1_2`, `h1_length_2`, `h1_count`, `meta_robots`, `rel_next`, `rel_prev`,
   `lint_critical`, `lint_error`, `lint_warn`, `lint_info`, `lint_results`, `timestamp`) VALUES (
@@ -438,8 +438,11 @@ INSERT INTO `crawl_links` (
     return db.insert_id()
 
 def _get_base_url(url):
-    res = urlparse(url)
-    return res.netloc
+    try:
+        res = urlparse(url)
+        return res.netloc
+    except:
+        return None
 
 def _get_path(url):
     base = _get_base_url(url)
