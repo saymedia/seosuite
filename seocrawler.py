@@ -45,7 +45,7 @@ def run(options):
             url_yaml = yaml.load(f)
             urls = url_yaml.get('seocrawlerurls', [])
     elif options.run_id:
-        save_file = '/Users/kylederkacz/Projects/Say/seosuite/jobs/%s.gz' % (options.run_id)
+        save_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'seocrawler', 'jobs', options.run_id + '.gz')
         if not os.path.exists(save_file):
             raise Exception('Save directory %s was not found' % save_file)
 
