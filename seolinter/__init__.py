@@ -3,7 +3,7 @@
 # usage:
 # > curl --silent http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
 # or
-# seolinter.lint(requests.get('http://fashionista.com/?__escaped_fragment__=').text)
+# seolinter.lint_html(requests.get('http://fashionista.com/?__escaped_fragment__=').text)
 
 import sys
 import re
@@ -95,6 +95,56 @@ def parse_html(html):
         'size': len(html),
     }
 
+def parse_sitemap(xml):
+    soup = BeautifulSoup(xml, html_parser)
+
+    if soup.find('sitemapindex'):
+        return _parse_sitemapindex(soup)
+    elif soup.find('urlset'):
+        return _parse_sitemapurlset(soup)
+    else:
+        raise Exception('invalid sitemap')
+
+def _parse_sitemapurlset(soup):
+    # find all the <url> tags in the document
+    urls = soup.findAll('url')
+
+    # no urls? bail
+    if not urls:
+        return False
+
+    # storage for later...
+    out = []
+
+    #extract what we need from the url
+    for u in urls:
+        out.append({
+            'loc': u.find('loc').string,
+            'priority': u.find('priority').string,
+            'change': u.find('changefreq').string,
+            'last': u.find('lastmod').string
+            })
+    return out
+
+def _parse_sitemapindex(soup):
+    # find all the <url> tags in the document
+    sitemaps = soup.findAll('sitemap')
+
+    # no sitemaps? bail
+    if not sitemaps:
+        return False
+
+    # storage for later...
+    out = []
+
+    #extract what we need from the url
+    for u in sitemaps:
+        out.append({
+            'loc': u.find('sitemap').find('loc').string
+            })
+    return out
+
+
 def extract_keywords(text):
     # We probably don't care about words shorter than 3 letters
     min_word_size = 3
@@ -114,7 +164,7 @@ def word_match_count(a, b):
                 count = count + 1
     return count
 
-def lint(html_string, level=INFO):
+def lint_html(html_string, level=INFO):
     output = {}
 
     p = parse_html(html_string)
@@ -196,7 +246,7 @@ def lint(html_string, level=INFO):
 
 def main():
     html_string = sys.stdin.read()
-    output = lint(html_string)
+    output = lint_html(html_string)
 
     exit = 0
 
