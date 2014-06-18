@@ -1,9 +1,10 @@
- # -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # usage:
 # > python seoreporter.py [type] [format] [run_id]
 # example:
-# > python seoreporter.py build junit d09b8571-5c8a-42ff-8ab7-c38f4f8871c4
+# > seoreporter.py --database=config.yaml build junit 8b32142a-b553-4309-a4bd-c2e6b031746f
 
 import optparse
 import os
