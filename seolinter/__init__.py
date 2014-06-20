@@ -68,8 +68,8 @@ rules = [
 
     # for sitemap urlset
     ('I30', 'has priority', INFO),
-    ('I31', 'has change', INFO),
-    ('I32', 'has last', INFO),
+    ('I31', 'has changefreq', INFO),
+    ('I32', 'has lastmod', INFO),
 ]
 
 def get_rules():
@@ -136,10 +136,10 @@ def _parse_sitemapurlset(soup):
     #extract what we need from the url
     for u in urls:
         out.append({
-            'loc': u.find('loc').string,
-            'priority': u.find('priority').string,
-            'change': u.find('changefreq').string,
-            'last': u.find('lastmod').string
+            'loc': u.find('loc').string if u.find('loc') else None,
+            'priority': u.find('priority').string if u.find('priority') else None,
+            'changefreq': u.find('changefreq').string if u.find('changefreq') else None,
+            'lastmod': u.find('lastmod').string if u.find('lastmod') else None,
             })
     return out
 
@@ -157,7 +157,7 @@ def _parse_sitemapindex(soup):
     #extract what we need from the url
     for u in sitemaps:
         out.append({
-            'loc': u.find('sitemap').find('loc').string
+            'loc': u.find('loc').string if u.find('loc') else None
             })
     return out
 
@@ -328,11 +328,11 @@ def _lint_sitemapurlset(p):
         output['E33'] = True
 
     for url in p:
-        if url.priority:
+        if url['priority']:
             output['I30'] = True
-        if url.change:
+        if url['changefreq']:
             output['I31'] = True
-        if url.last:
+        if url['lastmod']:
             output['I32'] = True
 
     return output
