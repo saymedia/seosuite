@@ -7,6 +7,7 @@
 
 import sys
 import re
+import robotparser
 
 from bs4 import BeautifulSoup
 
@@ -144,6 +145,25 @@ def _parse_sitemapindex(soup):
             })
     return out
 
+# Example sitemap
+'''
+# Tempest - biography
+
+User-agent: *
+Disallow: /search
+
+Sitemap: http://www.biography.com/sitemaps.xml
+'''
+def parse_robots_txt(txt):
+    # TODO: handle disallows per user agent
+    sitemap = re.compile("Sitemap:\s+(.+)").findall(txt)
+    disallow = re.compile("Disallow:\s+(.+)").findall(txt)
+    user_agent = re.compile("User-agent:\s+(.+)").findall(txt)
+    return {
+        'sitemap': sitemap,
+        'disallow': disallow,
+        'user_agent': user_agent
+    }
 
 def extract_keywords(text):
     # We probably don't care about words shorter than 3 letters
