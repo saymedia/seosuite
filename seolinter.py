@@ -5,6 +5,7 @@
 # > python seolinter.py [text] [format]
 # example:
 # > cat robots.txt | seolinter.py --format=txt
+# > curl http://www.biography.com/sitemaps.xml | seolinter.py
 
 import optparse
 import sys

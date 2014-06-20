@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# usage:
-# > curl --silent http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
-# or
-# seolinter.lint_html(requests.get('http://fashionista.com/?__escaped_fragment__=').text)
-
 import sys
 import re
 import robotparser
