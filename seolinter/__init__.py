@@ -31,6 +31,7 @@ stop_words = ('a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'that',
             'to', 'was', 'were', 'will', 'with')
 
 rules = [
+    # for html
     ('C22', 'has head', CRITICAL),
     # ('E01', 'is utf8', ERROR),
     ('E02', 'has title', ERROR),
@@ -54,6 +55,21 @@ rules = [
     ('I11', 'missing rel=next', INFO),
     ('I20', 'has robots=nofollow', INFO),
     ('I21', 'has robots=noindex', INFO),
+
+    # for robots.txt
+    ('C23', 'has sitemap', CRITICAL),
+    ('I24', 'has disallow', INFO),
+    ('I25', 'has user-agent', INFO),
+
+    # for sitemap index
+    ('C26', 'is valid xml', CRITICAL),
+    ('C27', 'has locs', CRITICAL),
+    ('E33', '<1000 locs in index', ERROR),
+
+    # for sitemap urlset
+    ('I30', 'has priority', INFO),
+    ('I31', 'has change', INFO),
+    ('I32', 'has last', INFO),
 ]
 
 def get_rules():
@@ -100,9 +116,9 @@ def parse_sitemap(xml):
     soup = BeautifulSoup(xml, html_parser)
 
     if soup.find('sitemapindex'):
-        return _parse_sitemapindex(soup)
+        return ('index', _parse_sitemapindex(soup))
     elif soup.find('urlset'):
-        return _parse_sitemapurlset(soup)
+        return ('urlset', _parse_sitemapurlset(soup))
     else:
         raise Exception('invalid sitemap')
 
@@ -263,26 +279,85 @@ def lint_html(html_string, level=INFO):
 
     return output
 
+def lint_sitemap(xml_string, level=INFO):
+    output = {}
 
-def main():
-    html_string = sys.stdin.read()
-    output = lint_html(html_string)
+    try:
+        p = parse_sitemap(xml_string)
+    except Exception, e:
+        output['C26'] = True
+        return output
 
-    exit = 0
+    if p[0] == 'index':
+        output = _lint_sitemapindex(p[1])
+    elif p[0] == 'urlset':
+        output = _lint_sitemapurlset(p[1])
+    else:
+        output['C26'] = True
+        return output
 
-    for rule in rules:
-        for key, value in output.iteritems():
-            if key == rule[0]:
-                print rule[0] + ':', rule[1], '(' + levels[rule[2]] + ')'
-                if value != True:
-                    print "\tfound:", value
-                if rule[2] == ERROR or rule[2] == CRITICAL:
-                    exit = 1
+    # remove rules below level requested
+    if level < INFO:
+        for rule in rules:
+            for key, value in output.iteritems():
+                if rule[2] < level:
+                    output[key].remove()
 
-    # if exit:
-    #     print html_string
+    return output
 
-    sys.exit(exit)
+def _lint_sitemapindex(p):
+    output = {}
 
-if __name__ == '__main__':
-    main()
+    if not p or len(p) == 0:
+        output['C27'] = True
+        return output
+
+    if not len(p) < 10000:
+        output['E33'] = True
+
+    return output
+
+def _lint_sitemapurlset(p):
+    output = {}
+
+    if not p or len(p) == 0:
+        output['C27'] = True
+        return output
+
+    if not len(p) < 10000:
+        output['E33'] = True
+
+    for url in p:
+        if url.priority:
+            output['I30'] = True
+        if url.change:
+            output['I31'] = True
+        if url.last:
+            output['I32'] = True
+
+    return output
+
+def lint_robots_txt(txt_string, level=INFO):
+    output = {}
+
+    p = parse_robots_txt(txt_string)
+
+    # stop and return on critical errors
+    if not p['sitemap']:
+        output['C23'] = True
+        return output
+
+    if not p['disallow']:
+        output['I24'] = True
+
+    if not p['user_agent']:
+        output['I25'] = True
+
+    # remove rules below level requested
+    if level < INFO:
+        for rule in rules:
+            for key, value in output.iteritems():
+                if rule[2] < level:
+                    output[key].remove()
+
+    return output

@@ -2,26 +2,49 @@
 # -*- coding: utf-8 -*-
 
 # usage:
-# > python seolinter.py [text] [format] [run_id]
+# > python seolinter.py [text] [format]
 # example:
 # > cat robots.txt | seolinter.py --format=txt
 
 import optparse
 import sys
+import re
 
 import seolinter
 
 def run(options, args):
-    stdin = "".join(sys.stdin.readlines())
+    stdin = sys.stdin.read()
+
+    if options.format == 'auto':
+        if not re.compile("\<").match(stdin):
+            options.format = 'txt'
+        elif not re.compile("\<html").match(stdin):
+            options.format = 'xml'
+        else:
+            options.format = 'html'
 
     if options.format == 'html':
-        print seolinter.lint_html(stdin)
+        output = seolinter.lint_html(stdin)
     if options.format == 'xml':
-        print seolinter.parse_sitemap(stdin)
+        output = seolinter.lint_sitemap(stdin)
     if options.format == 'txt':
-        print seolinter.parse_robots_txt(stdin)
-    if options.format == 'auto':
-        print seolinter.parse_html(stdin)
+        output = seolinter.lint_robots_txt(stdin)
+
+    exit = 0
+
+    for rule in seolinter.rules:
+        for key, value in output.iteritems():
+            if key == rule[0]:
+                print rule[0] + ':', rule[1], '(' + seolinter.levels[rule[2]] + ')'
+                if value != True:
+                    print "\tfound:", value
+                if rule[2] == seolinter.ERROR or rule[2] == seolinter.CRITICAL:
+                    exit = 1
+
+    # if exit:
+    #     print html_string
+
+    sys.exit(exit)
 
 if __name__ == "__main__":
     parser = optparse.OptionParser(description='Validates html, sitemap xml and robots.txt content for common errors.')
