@@ -218,7 +218,7 @@ def retrieve_url(url, user_agent=None, full=True):
 
 def process_html(html, url):
 
-    lint_errors = seolinter.lint(html)
+    lint_errors = seolinter.lint_html(html)
 
     page_details = extract_page_details(html, url)
 

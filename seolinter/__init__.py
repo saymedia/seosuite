@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# usage:
-# > curl --silent http://fashionista.com/?__escaped_fragment__= | python seolinter/__init__.py
-# or
-# seolinter.lint(requests.get('http://fashionista.com/?__escaped_fragment__=').text)
-
 import sys
 import re
+import robotparser
 
 from bs4 import BeautifulSoup
 
@@ -30,6 +26,7 @@ stop_words = ('a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'that',
             'to', 'was', 'were', 'will', 'with')
 
 rules = [
+    # for html
     ('C22', 'has head', CRITICAL),
     # ('E01', 'is utf8', ERROR),
     ('E02', 'has title', ERROR),
@@ -53,6 +50,21 @@ rules = [
     ('I11', 'missing rel=next', INFO),
     ('I20', 'has robots=nofollow', INFO),
     ('I21', 'has robots=noindex', INFO),
+
+    # for robots.txt
+    ('C23', 'has sitemap', CRITICAL),
+    ('I24', 'has disallow', INFO),
+    ('I25', 'has user-agent', INFO),
+
+    # for sitemap index
+    ('C26', 'is valid xml', CRITICAL),
+    ('C27', 'has locs', CRITICAL),
+    ('E33', '<1000 locs in index', ERROR),
+
+    # for sitemap urlset
+    ('I30', 'has priority', INFO),
+    ('I31', 'has changefreq', INFO),
+    ('I32', 'has lastmod', INFO),
 ]
 
 def get_rules():
@@ -95,6 +107,75 @@ def parse_html(html):
         'size': len(html),
     }
 
+def parse_sitemap(xml):
+    soup = BeautifulSoup(xml, html_parser)
+
+    if soup.find('sitemapindex'):
+        return ('index', _parse_sitemapindex(soup))
+    elif soup.find('urlset'):
+        return ('urlset', _parse_sitemapurlset(soup))
+    else:
+        raise Exception('invalid sitemap')
+
+def _parse_sitemapurlset(soup):
+    # find all the <url> tags in the document
+    urls = soup.findAll('url')
+
+    # no urls? bail
+    if not urls:
+        return False
+
+    # storage for later...
+    out = []
+
+    #extract what we need from the url
+    for u in urls:
+        out.append({
+            'loc': u.find('loc').string if u.find('loc') else None,
+            'priority': u.find('priority').string if u.find('priority') else None,
+            'changefreq': u.find('changefreq').string if u.find('changefreq') else None,
+            'lastmod': u.find('lastmod').string if u.find('lastmod') else None,
+            })
+    return out
+
+def _parse_sitemapindex(soup):
+    # find all the <url> tags in the document
+    sitemaps = soup.findAll('sitemap')
+
+    # no sitemaps? bail
+    if not sitemaps:
+        return False
+
+    # storage for later...
+    out = []
+
+    #extract what we need from the url
+    for u in sitemaps:
+        out.append({
+            'loc': u.find('loc').string if u.find('loc') else None
+            })
+    return out
+
+# Example sitemap
+'''
+# Tempest - biography
+
+User-agent: *
+Disallow: /search
+
+Sitemap: http://www.biography.com/sitemaps.xml
+'''
+def parse_robots_txt(txt):
+    # TODO: handle disallows per user agent
+    sitemap = re.compile("Sitemap:\s+(.+)").findall(txt)
+    disallow = re.compile("Disallow:\s+(.+)").findall(txt)
+    user_agent = re.compile("User-agent:\s+(.+)").findall(txt)
+    return {
+        'sitemap': sitemap,
+        'disallow': disallow,
+        'user_agent': user_agent
+    }
+
 def extract_keywords(text):
     # We probably don't care about words shorter than 3 letters
     min_word_size = 3
@@ -114,7 +195,7 @@ def word_match_count(a, b):
                 count = count + 1
     return count
 
-def lint(html_string, level=INFO):
+def lint_html(html_string, level=INFO):
     output = {}
 
     p = parse_html(html_string)
@@ -193,26 +274,85 @@ def lint(html_string, level=INFO):
 
     return output
 
+def lint_sitemap(xml_string, level=INFO):
+    output = {}
 
-def main():
-    html_string = sys.stdin.read()
-    output = lint(html_string)
+    try:
+        p = parse_sitemap(xml_string)
+    except Exception, e:
+        output['C26'] = True
+        return output
 
-    exit = 0
+    if p[0] == 'index':
+        output = _lint_sitemapindex(p[1])
+    elif p[0] == 'urlset':
+        output = _lint_sitemapurlset(p[1])
+    else:
+        output['C26'] = True
+        return output
 
-    for rule in rules:
-        for key, value in output.iteritems():
-            if key == rule[0]:
-                print rule[0] + ':', rule[1], '(' + levels[rule[2]] + ')'
-                if value != True:
-                    print "\tfound:", value
-                if rule[2] == ERROR or rule[2] == CRITICAL:
-                    exit = 1
+    # remove rules below level requested
+    if level < INFO:
+        for rule in rules:
+            for key, value in output.iteritems():
+                if rule[2] < level:
+                    output[key].remove()
 
-    # if exit:
-    #     print html_string
+    return output
 
-    sys.exit(exit)
+def _lint_sitemapindex(p):
+    output = {}
 
-if __name__ == '__main__':
-    main()
+    if not p or len(p) == 0:
+        output['C27'] = True
+        return output
+
+    if not len(p) < 10000:
+        output['E33'] = True
+
+    return output
+
+def _lint_sitemapurlset(p):
+    output = {}
+
+    if not p or len(p) == 0:
+        output['C27'] = True
+        return output
+
+    if not len(p) < 10000:
+        output['E33'] = True
+
+    for url in p:
+        if url['priority']:
+            output['I30'] = True
+        if url['changefreq']:
+            output['I31'] = True
+        if url['lastmod']:
+            output['I32'] = True
+
+    return output
+
+def lint_robots_txt(txt_string, level=INFO):
+    output = {}
+
+    p = parse_robots_txt(txt_string)
+
+    # stop and return on critical errors
+    if not p['sitemap']:
+        output['C23'] = True
+        return output
+
+    if not p['disallow']:
+        output['I24'] = True
+
+    if not p['user_agent']:
+        output['I25'] = True
+
+    # remove rules below level requested
+    if level < INFO:
+        for rule in rules:
+            for key, value in output.iteritems():
+                if rule[2] < level:
+                    output[key].remove()
+
+    return output
