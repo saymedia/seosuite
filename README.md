@@ -1,3 +1,7 @@
+NO LONGER MAINTAINED
+====================
+However PRs are accecpted.
+
 SEO Tool Suite
 ==============
 
