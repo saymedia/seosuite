@@ -1,6 +1,6 @@
 NO LONGER MAINTAINED
 ====================
-However PRs are accecpted.
+This project is archived.
 
 SEO Tool Suite
 ==============
